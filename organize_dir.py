@@ -2,7 +2,7 @@ import shutil
 import os
 
 source = '../farmacos'
-dest = '../farmacosOne3'
+dest = '../farmacosOne5'
 
 
 if not os.path.exists(dest):
