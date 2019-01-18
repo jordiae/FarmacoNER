@@ -12,6 +12,7 @@ Concept = collections.namedtuple('Concept',['cui','len','text','offset'])
 Sentence = collections.namedtuple('Sentence',['id','text','concepts'])
 Datum = collections.namedtuple('Datum',['id','txt','annotation'])
 Annotation = collections.namedtuple('Annotation',['t','type','offset1','offset2','name','numNote','cui'])
+AnnotationSet = collections.namedtuple('AnnotationSet',['annotations'])
 '''
 T1  NORMALIZABLES 3688 3692 CDDP
 #1  AnnotatorNotes T1   387318005
@@ -58,7 +59,10 @@ def getAllSentencesFromXML():
         break
     return sentences
 
-def createAnnotation(sentence):
+def createAnnotation(T,label,offset,length,name,numNote,cui):
+    return Annotation(t = 'T' + str(T), type = label, offset1 = offset, offset2 = str(int(offset) + int(length) - 1), name = name, numNote = str(numNote), cui = cui)
+
+def createAnnotationSet(sentence):
     # Annotation = collections.namedtuple('Annotation',['t','type','offset1','offset2','name','numNote','cui'])
     # Concept = collections.namedtuple('Concept',['cui','len','text','offset'])
     # MRCONSO, MRSTY
@@ -89,6 +93,8 @@ def createAnnotation(sentence):
     '''
     proteinsTs = set(['T116','T126'])
     chemicalTs = set(['T109','T103','T104','T121','T196','T197'])
+    annotations = []
+    numNotes = 0
     for uniqueConcept, concepts in uniqueConcepts.items():
         ts = []
         for concept in concepts:
@@ -97,22 +103,54 @@ def createAnnotation(sentence):
         ts = set(ts)
         print()
         print(ts)
+        label = ''
         if len(ts.intersection(proteinsTs)) > 0 and len(ts.intersection(chemicalTs)) == 0:
-            print('PROTEINAS')
+            label = 'PROTEINAS'
         elif len(ts.intersection(proteinsTs)) == 0 and len(ts.intersection(chemicalTs)) > 0:
             row2 = MRCONSO['mrconso'].find_one(cui = concept.cui)
             if row2['source'] == 'SNOMEDCT_US':
-                print('NORMALIZABLES')
+                label = 'NORMALIZABLES'
             else:
-                print('NO_NORMALIZABLES')
+                label = 'NO_NORMALIZABLES'
         else:
-            print('WHAT TO DO HERE, UNCLEAR?')
+            print('WHAT TO DO HERE)')
+            label = 'OTHER'
+        print(label)
+        annotations.append(createAnnotation(T = numNotes+1,label = label,offset = uniqueConcepts[uniqueConcept][0].offset,\
+            length = uniqueConcepts[uniqueConcept][0].len,name = uniqueConcept,numNote = numNotes+1,cui=uniqueConcepts[uniqueConcept][0].cui)) # T? cui?
         print()
-    annotation = None#Annotation()
-    return annotation
-def writePair(sentence,annotation):
+        numNotes += 1
+    return AnnotationSet(annotations = annotations)
+
+
+def writePair(sentence,annotationSet):
     #AUGMENTED_DATA_PATH
-    pass
+    # Annotation = collections.namedtuple('Annotation',['t','type','offset1','offset2','name','numNote','cui'])
+    '''
+    T1  NORMALIZABLES 3688 3692 CDDP
+    #1  AnnotatorNotes T1   387318005
+    '''
+    txt = sentence.text
+    ann = ''
+    #print('Parell va:')
+    #print(txt)
+    #print(annotationSet.annotations)
+    for annotation in annotationSet.annotations:
+        #print('name', annotation.name)
+        ann = ann + annotation.t + ' ' + annotation.type + ' ' + annotation.offset1 + ' ' + annotation.offset2  \
+               + ' ' + annotation.name + '\n' + '#' + annotation.numNote + ' AnnotatorNotes ' +  annotation.t \
+               + ' \t ' + annotation.cui + '\n'
+        #print(ann)
+    #print()
+    #return None
+    print(sentence.id + '.txt:')
+    print(txt)
+    print()
+    print(sentence.id + '.ann:')
+    print(ann)
+    print()
+    print()
+
 def main():
     sentences = getAllSentencesFromXML()
     for sentence in sentences:
@@ -131,8 +169,8 @@ def main():
         '''
     annotations = []
     for sentence in sentences:
-        annotations.append(createAnnotation(sentence))
-    for sentence,annotation in zip(sentences,annotations):
-        writePair(sentence,annotation)
+        annotations.append(createAnnotationSet(sentence))
+    for sentence,annotationSet in zip(sentences,annotations):
+        writePair(sentence,annotationSet)
 if __name__ == "__main__":
     main()
