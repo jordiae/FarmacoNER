@@ -39,12 +39,16 @@ def getAllSentencesFromXML(filePath):
             es = unit[1:]
             # treat extra spaces, dots, commas. For the moment, only at the end.
             for e in es:
+                if e.text == None: # for Medline
+                    continue
                 if e.text[-1] == ' ' or e.text[-1] == ',' or e.text[-1] == '.':
                     e.text = e.text[:-1]
                     e.attrib['len'] = str(int(e.attrib['len'])-1)
             # Add concepts:
             concepts = []
             for e in es:
+                if e.text == None: # for Medline
+                    continue
                 #concepts.append(ET.tostring(e, encoding='utf8', method='xml'))
                 #concepts.append(tuple((e.attrib['cui'],e.attrib['len'],e.text)))
                 concepts.append(Concept(cui = e.attrib['cui'], len = e.attrib['len'], text = e.text, offset = e.attrib['offset']))
