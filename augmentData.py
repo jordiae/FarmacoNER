@@ -183,13 +183,13 @@ def writePair(sentence,annotationSet):
         f.write(ann)
 
 def main():
-    '''
+    
     sentences = getAllSentencesFromXML(XML_FILE_EMEA)
     #annotations = []
     for index,sentence in enumerate(sentences):
         print('Processing and writing sentence ', sentence.id, ' (',index,'/',len(sentences),') of', XML_FILE_EMEA)
         writePair(sentence,createAnnotationSet(sentence))
-    '''
+    
     sentences = getAllSentencesFromXML(XML_FILE_MEDLINE)
     for index,sentence in enumerate(sentences):
         print('Processing and writing sentence ', sentence.id, ' (',index,'/',len(sentences),') of', XML_FILE_MEDLINE)
