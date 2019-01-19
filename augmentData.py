@@ -18,7 +18,7 @@ AnnotationSet = collections.namedtuple('AnnotationSet',['annotations'])
 T1  NORMALIZABLES 3688 3692 CDDP
 #1  AnnotatorNotes T1   387318005
 '''
-AUGMENTED_DATA_PATH = '../augmentedData/'
+AUGMENTED_DATA_PATH = '../augmentedData3/'
 
 def getAllSentencesFromXML(filePath):
     print('Parsing XML',filePath,'...')
@@ -67,7 +67,7 @@ def getAllSentencesFromXML(filePath):
     return sentences
 
 def createAnnotation(T,label,offset,length,name,numNote,cui):
-    return Annotation(t = 'T' + str(T), type = label, offset1 = offset, offset2 = str(int(offset) + int(length) - 1), name = name, numNote = str(numNote), cui = cui)
+    return Annotation(t = 'T' + str(T), type = label, offset1 = offset, offset2 = str(int(offset) + int(length)), name = name, numNote = str(numNote), cui = cui)
 
 def createAnnotationSet(sentence):
     # Annotation = collections.namedtuple('Annotation',['t','type','offset1','offset2','name','numNote','cui'])
@@ -161,9 +161,9 @@ def writePair(sentence,annotationSet):
     #print(annotationSet.annotations)
     for annotation in annotationSet.annotations:
         #print('name', annotation.name)
-        ann = ann + annotation.t + ' ' + annotation.type + ' ' + annotation.offset1 + ' ' + annotation.offset2  \
-               + ' ' + annotation.name + '\n' + '#' + annotation.numNote + ' AnnotatorNotes ' +  annotation.t \
-               + ' \t ' + annotation.cui + '\n'
+        ann = ann + annotation.t + '\t' + annotation.type + ' ' + annotation.offset1 + ' ' + annotation.offset2  \
+               + '\t' + annotation.name + '\n' + '#' + annotation.numNote + '\tAnnotatorNotes ' +  annotation.t \
+               + '\t' + annotation.cui + '\n'
         #print(ann)
     #print()
     #return None
@@ -183,12 +183,13 @@ def writePair(sentence,annotationSet):
         f.write(ann)
 
 def main():
+    '''
     sentences = getAllSentencesFromXML(XML_FILE_EMEA)
     #annotations = []
     for index,sentence in enumerate(sentences):
         print('Processing and writing sentence ', sentence.id, ' (',index,'/',len(sentences),') of', XML_FILE_EMEA)
         writePair(sentence,createAnnotationSet(sentence))
-
+    '''
     sentences = getAllSentencesFromXML(XML_FILE_MEDLINE)
     for index,sentence in enumerate(sentences):
         print('Processing and writing sentence ', sentence.id, ' (',index,'/',len(sentences),') of', XML_FILE_MEDLINE)
