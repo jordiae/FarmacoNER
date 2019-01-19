@@ -2,10 +2,10 @@ import dataset
 import xml.etree.ElementTree as ET
 import ast
 import collections
-MRCONSO = dataset.connect('sqlite:///../mrconso.db')
-MRSTY = dataset.connect('sqlite:///../mrsty.db')
+MRCONSO = dataset.connect('sqlite:///../UMLS/mrconso.db')
+MRSTY = dataset.connect('sqlite:///../UMLS/mrsty.db')
 
-XML_PATH = '../EC21.d/'
+XML_PATH = '../EC21-v1/EC21.d/'
 XML_FILE_EMEA = XML_PATH + 'EMEA_es_EC21_man.xml'
 XML_FILE_MEDLINE = XML_PATH + 'Medline_es_EC21_man.xml'
 
@@ -102,8 +102,8 @@ def createAnnotationSet(sentence):
     for uniqueConcept, concepts in uniqueConcepts.items():
         ts = set([])
         for concept in concepts:
-            #row = MRSTY['mrconso'].find_one(cui = concept.cui) # the table is named mrconso instead of mrsty
-            rows = MRSTY['mrconso'].find(cui = concept.cui)
+            #row = MRSTY['mrconso'].find_one(cui = concept.cui)
+            rows = MRSTY['mrsty'].find(cui = concept.cui)
             if rows != None:
                 empty = True
                 for tt in rows:
