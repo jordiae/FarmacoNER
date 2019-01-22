@@ -18,7 +18,7 @@ AnnotationSet = collections.namedtuple('AnnotationSet',['annotations'])
 T1  NORMALIZABLES 3688 3692 CDDP
 #1  AnnotatorNotes T1   387318005
 '''
-AUGMENTED_DATA_PATH = '../augmentedData3/'
+AUGMENTED_DATA_PATH = '../augmentedData/'
 
 def getAllSentencesFromXML(filePath):
     print('Parsing XML',filePath,'...')

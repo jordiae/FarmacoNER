@@ -3,7 +3,7 @@ import os
 import random
 import math
 
-source = '../farmacosOne'
+source = '../farmacos-final-Simple-Split'
 
 files = os.listdir(source)
 

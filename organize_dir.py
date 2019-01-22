@@ -1,8 +1,8 @@
 import shutil
 import os
 
-source = '../farmacos'
-dest = '../farmacosOne5'
+source = '../farmacos-final'
+dest = '../farmacos-final-One'
 
 
 if not os.path.exists(dest):
