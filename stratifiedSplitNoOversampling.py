@@ -59,12 +59,12 @@ def main():
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, stratify = y, random_state=1234)
 	X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1/(0.1+0.8), stratify = y_train, random_state=1234)
 
-	if not os.path.exists(source+'/train'):
-		os.makedirs(source+'/train')
-	if not os.path.exists(source+'/valid'):
-		os.makedirs(source+'/valid')
-	if not os.path.exists(source+'/test'):
-		os.makedirs(source+'/test')
+	if not os.path.exists(dest+'/train'):
+		os.makedirs(dest+'/train')
+	if not os.path.exists(dest+'/valid'):
+		os.makedirs(dest+'/valid')
+	if not os.path.exists(dest+'/test'):
+		os.makedirs(dest+'/test')
 	print(len(X))
 	print(len(X_train))
 	print(len(X_val))
