@@ -23,15 +23,17 @@ class Dataset(object):
         token_count = collections.defaultdict(lambda: 0)
         label_count = collections.defaultdict(lambda: 0)
         character_count = collections.defaultdict(lambda: 0)
+        pos_tag_count = collections.defaultdict(lambda: 0)
 
         line_count = -1
         tokens = []
         labels = []
+        pos_tags = []
         new_token_sequence = []
         new_label_sequence = []
+        new_pos_tag_sequence = []
         if dataset_filepath:
             f = codecs.open(dataset_filepath, 'r', 'UTF-8')
-            print(dataset_filepath)
             for line in f:
                 line_count += 1
                 line = line.strip().split(' ')
@@ -39,16 +41,21 @@ class Dataset(object):
                     if len(new_token_sequence) > 0:
                         labels.append(new_label_sequence)
                         tokens.append(new_token_sequence)
+                        pos_tags.append(new_pos_tag_sequence)
                         new_token_sequence = []
                         new_label_sequence = []
+                        new_pos_tag_sequence = []
                     continue
                 token = str(line[0])
                 label = str(line[-1])
+                pos_tag = str(line[-4])
                 token_count[token] += 1
                 label_count[label] += 1
+                pos_tag_count[pos_tag] += 1
 
                 new_token_sequence.append(token)
                 new_label_sequence.append(label)
+                new_pos_tag_sequence.append(pos_tag)
 
                 for character in token:
                     character_count[character] += 1
@@ -58,28 +65,33 @@ class Dataset(object):
             if len(new_token_sequence) > 0:
                 labels.append(new_label_sequence)
                 tokens.append(new_token_sequence)
+                pos_tags.append(new_pos_tag_sequence)
             f.close()
-        return labels, tokens, token_count, label_count, character_count
+        return labels, tokens, token_count, label_count, character_count, pos_tags, pos_tag_count
 
 
     def _convert_to_indices(self, dataset_types):
         tokens = self.tokens
         labels = self.labels
+        pos_tags = self.pos_tags
         token_to_index = self.token_to_index
         character_to_index = self.character_to_index
         label_to_index = self.label_to_index
         index_to_label = self.index_to_label
+        index_to_pos_tag = self.index_to_pos_tag
         
         # Map tokens and labels to their indices
         token_indices = {}
         label_indices = {}
         characters = {}
+        pos_tag_indices = {}
         token_lengths = {}
         character_indices = {}
         character_indices_padded = {}
         for dataset_type in dataset_types:
             token_indices[dataset_type] = []
             characters[dataset_type] = []
+            pos_tags[dataset_type] = []
             character_indices[dataset_type] = []
             token_lengths[dataset_type] = []
             character_indices_padded[dataset_type] = []
@@ -94,6 +106,10 @@ class Dataset(object):
             label_indices[dataset_type] = []
             for label_sequence in labels[dataset_type]:
                 label_indices[dataset_type].append([label_to_index[label] for label in label_sequence])
+
+            pos_tag_indices[dataset_type] = []
+            for pos_tag_sequence in pos_tags[dataset_type]:
+                pos_tag_indices[dataset_type].append([pos_tag_to_index[pos_tag] for pos_tag in pos_tag_sequence])
         
         if self.verbose:
             print('token_lengths[\'train\'][0][0:10]: {0}'.format(token_lengths['train'][0][0:10]))
@@ -107,6 +123,8 @@ class Dataset(object):
             print('character_indices[\'train\'][0][0:10]: {0}'.format(character_indices['train'][0][0:10]))
         if self.verbose:
             print('character_indices_padded[\'train\'][0][0:10]: {0}'.format(character_indices_padded['train'][0][0:10])) # Vectorize the labels
+        if self.verbose:
+            print('pos_tag_indices[\'train\'][0:10]: {0}'.format(pos_tag_indices['train'][0:10]))
         # [Numpy 1-hot array](http://stackoverflow.com/a/42263603/395857)
         label_binarizer = sklearn.preprocessing.LabelBinarizer()
         label_binarizer.fit(range(max(index_to_label.keys()) + 1))
@@ -115,13 +133,26 @@ class Dataset(object):
             label_vector_indices[dataset_type] = []
             for label_indices_sequence in label_indices[dataset_type]:
                 label_vector_indices[dataset_type].append(label_binarizer.transform(label_indices_sequence))
+
+
+        pos_tag_binarizer = sklearn.preprocessing.LabelBinarizer()
+        pos_tag_binarizer.fit(range(max(index_to_pos_tag.keys()) + 1))
+        pos_tag_vector_indices = {}
+        for dataset_type in dataset_types:
+            pos_tag_vector_indices[dataset_type] = []
+            for pos_tag_indices_sequence in pos_tag_indices[dataset_type]:
+                pos_tag_vector_indices[dataset_type].append(pos_tag_binarizer.transform(pos_tag_indices_sequence))
         
         if self.verbose:
             print('label_vector_indices[\'train\'][0:2]: {0}'.format(label_vector_indices['train'][0:2]))
         if self.verbose:
             print('len(label_vector_indices[\'train\']): {0}'.format(len(label_vector_indices['train'])))
-            
-        return token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices
+        
+        if self.verbose:
+            print('pos_tag_vector_indices[\'train\'][0:2]: {0}'.format(pos_tag_vector_indices['train'][0:2]))
+        if self.verbose:
+            print('len(pos_tag_vector_indices[\'train\']): {0}'.format(len(pos_tag_vector_indices['train'])))
+        return token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices, pos_tag_indices, pos_tag_vector_indices
 
     def update_dataset(self, dataset_filepaths, dataset_types):
         '''
@@ -129,9 +160,9 @@ class Dataset(object):
         Overwrites the data of type specified in dataset_types using the existing token_to_index, character_to_index, and label_to_index mappings. 
         '''
         for dataset_type in dataset_types:
-            self.labels[dataset_type], self.tokens[dataset_type], _, _, _ = self._parse_dataset(dataset_filepaths.get(dataset_type, None))
+            self.labels[dataset_type], self.tokens[dataset_type], _, _, _,self.pos_tags[dataset_type] = self._parse_dataset(dataset_filepaths.get(dataset_type, None))
         
-        token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices = self._convert_to_indices(dataset_types)
+        token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices, pos_tag_indices, pos_tag_vector_indices = self._convert_to_indices(dataset_types)
         
         self.token_indices.update(token_indices)
         self.label_indices.update(label_indices)
@@ -171,16 +202,17 @@ class Dataset(object):
         self.unique_labels = []
         labels = {}
         tokens = {}
+        pos_tags = {}
         label_count = {}
         token_count = {}
         character_count = {}
+        pos_tag_count = {}
         for dataset_type in ['train', 'valid', 'test', 'deploy']:
-            labels[dataset_type], tokens[dataset_type], token_count[dataset_type], label_count[dataset_type], character_count[dataset_type] \
-                = self._parse_dataset(dataset_filepaths.get(dataset_type, None))
+            labels[dataset_type], tokens[dataset_type], token_count[dataset_type], label_count[dataset_type], character_count[dataset_type], \
+                pos_tags[dataset_type], pos_tag_count[dataset_type] = self._parse_dataset(dataset_filepaths.get(dataset_type, None))
 
             if self.verbose: print("dataset_type: {0}".format(dataset_type))
             if self.verbose: print("len(token_count[dataset_type]): {0}".format(len(token_count[dataset_type])))
-
         token_count['all'] = {}
         for token in list(token_count['train'].keys()) + list(token_count['valid'].keys()) + list(token_count['test'].keys()) + list(token_count['deploy'].keys()):
             token_count['all'][token] = token_count['train'][token] + token_count['valid'][token] + token_count['test'][token] + token_count['deploy'][token]
@@ -212,9 +244,14 @@ class Dataset(object):
         for character in list(label_count['train'].keys()) + list(label_count['valid'].keys()) + list(label_count['test'].keys()) + list(label_count['deploy'].keys()):
             label_count['all'][character] = label_count['train'][character] + label_count['valid'][character] + label_count['test'][character] + label_count['deploy'][character]
 
+        pos_tag_count['all'] = {}
+        for pos_tag in list(pos_tag_count['train'].keys()) + list(pos_tag_count['valid'].keys()) + list(pos_tag_count['test'].keys()) + list(pos_tag_count['deploy'].keys()):
+            pos_tag_count['all'][pos_tag] = pos_tag_count['train'][pos_tag] + pos_tag_count['valid'][pos_tag] + pos_tag_count['test'][pos_tag] + pos_tag_count['deploy'][pos_tag]
+        
         token_count['all'] = utils.order_dictionary(token_count['all'], 'value_key', reverse = True)
         label_count['all'] = utils.order_dictionary(label_count['all'], 'key', reverse = False)
         character_count['all'] = utils.order_dictionary(character_count['all'], 'value', reverse = True)
+        pos_tag_count['all'] = utils.order_dictionary(pos_tag_count['all'], 'key', reverse = False)
         if self.verbose: print('character_count[\'all\']: {0}'.format(character_count['all']))
 
         token_to_index = {}
@@ -292,6 +329,12 @@ class Dataset(object):
             character_to_index[character] = iteration_number
             iteration_number += 1
 
+        pos_tag_to_index = {}
+        iteration_number = 0
+        for pos_tag, count in pos_tag_count['all'].items():
+            pos_tag_to_index[pos_tag] = iteration_number
+            iteration_number += 1
+
         if self.verbose: print('token_count[\'train\'][0:10]: {0}'.format(list(token_count['train'].items())[0:10]))
         token_to_index = utils.order_dictionary(token_to_index, 'value', reverse = False)
         if self.verbose: print('token_to_index: {0}'.format(token_to_index))
@@ -310,6 +353,12 @@ class Dataset(object):
         if self.verbose: print('character_to_index: {0}'.format(character_to_index))
         if self.verbose: print('index_to_character: {0}'.format(index_to_character))
 
+        if self.verbose: print('pos_tag_count[\'train\']: {0}'.format(pos_tag['train']))
+        pos_tag_to_index = utils.order_dictionary(pos_tag_to_index, 'value', reverse = False)
+        if self.verbose: print('pos_tag_to_index: {0}'.format(pos_tag_to_index))
+        index_to_pos_tag = utils.reverse_dictionary(pos_tag_to_index)
+        if self.verbose: print('index_to_pos_tag: {0}'.format(index_to_pos_tag))
+
 
         if self.verbose: print('labels[\'train\'][0:10]: {0}'.format(labels['train'][0:10]))
         if self.verbose: print('tokens[\'train\'][0:10]: {0}'.format(tokens['train'][0:10]))
@@ -326,12 +375,15 @@ class Dataset(object):
         self.character_to_index = character_to_index
         self.index_to_label = index_to_label
         self.label_to_index = label_to_index
+        self.index_to_pos_tag = index_to_pos_tag
+        self.pos_tag_to_index = pos_tag_to_index
         if self.verbose: print("len(self.token_to_index): {0}".format(len(self.token_to_index)))
         if self.verbose: print("len(self.index_to_token): {0}".format(len(self.index_to_token)))
         self.tokens = tokens
         self.labels = labels
+        self.pos_tags = pos_tags
 
-        token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices = self._convert_to_indices(dataset_filepaths.keys())
+        token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices, pos_tag_indices, pos_tag_vector_indices = self._convert_to_indices(dataset_filepaths.keys())
         
         self.token_indices = token_indices
         self.label_indices = label_indices
