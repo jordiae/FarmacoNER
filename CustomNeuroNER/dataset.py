@@ -396,9 +396,11 @@ class Dataset(object):
         self.number_of_classes = max(self.index_to_label.keys()) + 1
         self.vocabulary_size = max(self.index_to_token.keys()) + 1
         self.alphabet_size = max(self.index_to_character.keys()) + 1
+        self.number_of_POS_types = max(self.index_to_pos_tag.keys()) + 1
         if self.verbose: print("self.number_of_classes: {0}".format(self.number_of_classes))
         if self.verbose: print("self.alphabet_size: {0}".format(self.alphabet_size))
         if self.verbose: print("self.vocabulary_size: {0}".format(self.vocabulary_size))
+        if self.verbose: print("self.number_of_POS_types: {0}".format(self.number_of_POS_types))
 
         # unique_labels_of_interest is used to compute F1-scores.
         self.unique_labels_of_interest = list(self.unique_labels)
