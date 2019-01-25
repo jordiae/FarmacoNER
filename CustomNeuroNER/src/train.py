@@ -11,10 +11,6 @@ import utils_nlp
 
 def train_step(sess, dataset, sequence_number, model, parameters):
     # Perform one iteration
-    print('LABEL')
-    print(dataset.label_vector_indices['train'][sequence_number])
-    print('POS')
-    print(dataset.pos_tag_vector_indices['train'][sequence_number])
     token_indices_sequence = dataset.token_indices['train'][sequence_number]
     for i, token_index in enumerate(token_indices_sequence):
         if token_index in dataset.infrequent_token_indices and np.random.uniform() < 0.5:
@@ -45,10 +41,6 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
     output_file = codecs.open(output_filepath, 'w', 'UTF-8')
     original_conll_file = codecs.open(dataset_filepaths[dataset_type], 'r', 'UTF-8')
     for i in range(len(dataset.token_indices[dataset_type])):
-        print('LABEL')
-        print(dataset.label_vector_indices[dataset_type][i])
-        print('POS')
-        print(dataset.pos_tag_vector_indices[dataset_type][i])
         feed_dict = {
           model.input_token_indices: dataset.token_indices[dataset_type][i],
           model.input_token_character_indices: dataset.character_indices_padded[dataset_type][i],

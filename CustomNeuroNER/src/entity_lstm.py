@@ -72,7 +72,7 @@ class EntityLSTM(object):
 
         
         if parameters['use_pos']:
-            self.input_pos_tag_indices = tf.placeholder(tf.int32, [None,dataset.number_of_classes], name="input_pos_tag_indices")
+            self.input_pos_tag_indices = tf.placeholder(tf.int32, [None,dataset.number_of_POS_types], name="input_pos_tag_indices")
             #self.input_pos_tag_indices_vector = tf.placeholder(tf.float32, [None, dataset.number_of_POS_types], name="input_pos_tag_indices_vector")
             #self.input_pos_tag_indices_flat = tf.placeholder(tf.int32, [None], name="input_pos_tag_indices_flat")
 
@@ -114,7 +114,7 @@ class EntityLSTM(object):
             with tf.variable_scope("pos_tag_embedding"):
                     self.pos_tag_embedding_weights = tf.get_variable(
                         "pos_tag_embedding_weights",
-                        shape=[dataset.number_of_POS_types,1],#, parameters['character_embedding_dimension']],
+                        shape=[dataset.number_of_POS_types],#, parameters['character_embedding_dimension']],
                         initializer=initializer,
                         trainable=False)
                     embedded_pos_tags = tf.nn.embedding_lookup(self.pos_tag_embedding_weights, self.input_pos_tag_indices, name='embedded_pos_tags')
