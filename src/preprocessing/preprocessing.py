@@ -104,8 +104,8 @@ def augment_data(other = False):
     del(engine_mrsty)
     del(mrstyDF)
 
-    os.system('sqlite3 -line ' + SQL_MRCONSO_PATH + ' CREATE INDEX cuis ON mrconso (cui);')
-    os.system('sqlite3 -line ' + SQL_MRSTY_PATH + ' CREATE INDEX cuis ON mrsty (cui);')
+    os.system('sqlite3 -line ' + SQL_MRCONSO_PATH + " 'CREATE INDEX cuis ON mrconso (cui);'")
+    os.system('sqlite3 -line ' + SQL_MRSTY_PATH + " 'CREATE INDEX cuis ON mrsty (cui);'")
 
     Concept = collections.namedtuple('Concept',['cui','len','text','offset'])
     Sentence = collections.namedtuple('Sentence',['id','text','concepts'])
@@ -415,9 +415,9 @@ def simple_split():
 def main():
     #get_data()
     #organize_dir()
-    get_pos(path = FARMACOS_PATH + '-one')
-    stratified_split(oversampling = False)
-    stratified_split(oversampling = True, delete = False)
+    #get_pos(path = FARMACOS_PATH + '-one')
+    #stratified_split(oversampling = False)
+    #stratified_split(oversampling = True, delete = False)
     augment_data(other = False)
     create_experiments()
 
