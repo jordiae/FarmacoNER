@@ -1,5 +1,5 @@
-import datas NO_NORMALIZABLES: precision:   0.00%; recall:   0.00%; FB1:   0.00  895
-et
+import datas #NO_NORMALIZABLES: precision:   0.00%; recall:   0.00%; FB1:   0.00  895
+#et
 
 db = dataset.connect('sqlite:///../mrconso2.db')
 table = db['mrconso']
