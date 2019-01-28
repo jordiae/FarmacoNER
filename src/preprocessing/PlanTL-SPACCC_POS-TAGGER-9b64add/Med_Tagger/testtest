@@ -1,0 +1,14 @@
+T1	PD 0 4	Este
+#1	Norm T1	este PD0MS000
+T2	VS 5 7	es
+#2	Norm T2	ser VSIP3S0
+T3	DI 8 10	un
+#3	Norm T3	uno DI0MS0
+T4	NC 11 16	texto
+#4	Norm T4	texto NCMS000
+T5	SP 17 19	de
+#5	Norm T5	de SPS00
+T6	NC 20 26	prueba
+#6	Norm T6	prueba NCFS000
+T7	Fp 27 28	.
+#7	Norm T7	. Fp
