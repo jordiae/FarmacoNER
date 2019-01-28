@@ -1,7 +1,7 @@
 import os
 import sys
 
-DATA_PATH = '../farmacos-final-One-POS'
+DATA_PATH = '../farmacos-final-One-POS2'
 TAGGER_PATH = '../PlanTL-SPACCC_POS-TAGGER-9b64add/Med_Tagger'
 sys.path.append(TAGGER_PATH)
 

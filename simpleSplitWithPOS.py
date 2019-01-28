@@ -3,8 +3,8 @@ import os
 import random
 import math
 
-source = '../farmacos-final-One-POS'
-dest = '../farmacos-final-Simple-Split-With-POS'
+source = '../farmacos-final-One-POS2'
+dest = '../farmacos-final-Simple-Split-With-POS2'
 
 files = os.listdir(source)
 
