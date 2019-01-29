@@ -229,14 +229,14 @@ def augment_data(other = False):
         AUGMENTED_DATA_PATH = AUGMENTED_OTHER_DATA_PATH
     else:
         AUGMENTED_DATA_PATH = AUGMENTED_NO_OTHER_DATA_PATH
-    sentences = getAllSentencesFromXML(XML_FILE_EMEA)
+    sentences = getAllSentencesFromXML(MANTRA_XML_FILE_EMEA_PATH)
     for index,sentence in enumerate(sentences):
-        print('Processing and writing sentence ', sentence.id, ' (',index,'/',len(sentences),') of', XML_FILE_EMEA)
+        print('Processing and writing sentence ', sentence.id, ' (',index,'/',len(sentences),') of', MANTRA_XML_FILE_EMEA_PATH)
         writePair(sentence,createAnnotationSet(sentence))
         
-    sentences = getAllSentencesFromXML(XML_FILE_MEDLINE)
+    sentences = getAllSentencesFromXML(MANTRA_XML_FILE_MEDLINE_PATH)
     for index,sentence in enumerate(sentences):
-        print('Processing and writing sentence ', sentence.id, ' (',index,'/',len(sentences),') of', XML_FILE_MEDLINE)
+        print('Processing and writing sentence ', sentence.id, ' (',index,'/',len(sentences),') of', MANTRA_XML_FILE_MEDLINE_PATH)
         writePair(sentence,createAnnotationSet(sentence))
 
     get_pos(AUGMENTED_DATA_PATH)
