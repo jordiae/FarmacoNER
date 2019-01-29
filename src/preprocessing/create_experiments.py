@@ -51,7 +51,7 @@ def create_experiments():
                       'freeze_pos': False}
         parameters_filepath = '/gpfs/home/bsc88/bsc88251/experiments/' + experiment.name + '/' + experiment.name + '_parameters.ini'
         output_folder = '/gpfs/home/bsc88/bsc88251/experiments/' + experiment.name + '/' + experiment.name + '_output'
-        dataset_text_folder = '/gpfs/scratch/bsc88/bsc88251/data/farmacos-final-one'
+        dataset_text_folder = '/gpfs/scratch/bsc88/bsc88251/data/' + experiment.name + '/farmacos-final-one'
         token_pretrained_embedding_filepath = '/gpfs/scratch/bsc88/bsc88251/data/word_vectors/' + experiment.embedding
 
         if experiment.stratified:
@@ -259,28 +259,28 @@ python3 main.py --parameters_filepath {parameters_filepath}
         
 
     # embeddings
-    create_experiment(Experiment(name = '1baseline_glove_original',oversampling = True, delete = False, pos = False, augmentation = False, \
+    create_experiment(Experiment(name = '1baseline_glove_original',oversampling = False, delete = False, pos = False, augmentation = False, \
         other = False, embedding = 'glove-sbwc.i25.vec', stratified = True))
 
-    create_experiment(Experiment(name = '2baseline_fasttext_original',oversampling = True, delete = False, pos = False, augmentation = False, \
+    create_experiment(Experiment(name = '2baseline_fasttext_original',oversampling = False, delete = False, pos = False, augmentation = False, \
         other = False, embedding = 'fasttext-sbwc.vec', stratified = True))
 
-    create_experiment(Experiment(name = '3baseline_fasttext_wikipedia',oversampling = True, delete = False, pos = False, augmentation = False, \
+    create_experiment(Experiment(name = '3baseline_fasttext_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
         other = False, embedding = 'Wikipedia_Fasttext.vec', stratified = True))
 
-    create_experiment(Experiment(name = '4baseline_fasttext_scielo',oversampling = True, delete = False, pos = False, augmentation = False, \
+    create_experiment(Experiment(name = '4baseline_fasttext_scielo',oversampling = False, delete = False, pos = False, augmentation = False, \
         other = False, embedding = 'Scielo_Fasttext.vec', stratified = True))
 
-    create_experiment(Experiment(name = '5baseline_fasttext_scielo_wikipedia',oversampling = True, delete = False, pos = False, augmentation = False, \
+    create_experiment(Experiment(name = '5baseline_fasttext_scielo_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
         other = False, embedding = 'Scielo_wiki_Fasttext.vec', stratified = True))
 
-    create_experiment(Experiment(name = '6baseline_word2vec_wikipedia',oversampling = True, delete = False, pos = False, augmentation = False, \
+    create_experiment(Experiment(name = '6baseline_word2vec_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
         other = False, embedding = 'W2V_wiki_w10_c5_300_15epoch.txt', stratified = True))
 
-    create_experiment(Experiment(name = '7baseline_word2vec_scielo',oversampling = True, delete = False, pos = False, augmentation = False, \
+    create_experiment(Experiment(name = '7baseline_word2vec_scielo',oversampling = False, delete = False, pos = False, augmentation = False, \
         other = False, embedding = 'W2V_scielo_w10_c5_300_15epoch.txt', stratified = True))
 
-    create_experiment(Experiment(name = '8baseline_word2vec_scielo_wikipedia',oversampling = True, delete = False, pos = False, augmentation = False, \
+    create_experiment(Experiment(name = '8baseline_word2vec_scielo_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
         other = False, embedding = 'W2V_scielo_wiki_w10_c5_300_15epoch.txt', stratified = True))
 
 
