@@ -23,8 +23,8 @@ UMLS_PATH = os.path.join(DATA_PATH,'UMLS')
 MRCONSO_PATH = os.path.join(UMLS_PATH,'MRCONSO.RRF')
 MRSTY_PATH = os.path.join(UMLS_PATH,'MRSTY.RRF')
 FILTERED_MRCONSO_PATH = os.path.join(UMLS_PATH,'filtered-mrconso.txt')
-SQL_MRCONSO_PATH = os.path.join('sqlite:///',UMLS_PATH,'mrconso.db')
-SQL_MRSTY_PATH = os.path.join('sqlite:///',UMLS_PATH,'mrsty.db')
+SQL_MRCONSO_PATH = os.path.join(UMLS_PATH,'mrconso.db')
+SQL_MRSTY_PATH = os.path.join(UMLS_PATH,'mrsty.db')
 
 MANTRA_XML_PATH = os.path.join(DATA_PATH,'EC21-v1','EC21.d')
 MANTRA_XML_FILE_EMEA_PATH = os.path.join(MANTRA_XML_PATH,'EMEA_es_EC21_man.xml')
@@ -84,7 +84,7 @@ def organize_dir():
 def augment_data(other = False):
     print('Augmenting data...')
     os.system("cut -d '|' -f1,12 " + MRCONSO_PATH + " > " + FILTERED_MRCONSO_PATH)
-    engine_mrconso = create_engine(SQL_MRCONSO_PATH, echo=False)
+    engine_mrconso = create_engine('sqlite:///' + SQL_MRCONSO_PATH, echo=False)
     print('Reading file...')
     with open(FILTERED_MRCONSO_PATH) as f:
         mrconsoDF = pd.read_csv(f, sep='|', header=None,lineterminator='\n',names=['cui','source'])# index_col=0,
@@ -94,7 +94,7 @@ def augment_data(other = False):
     del(engine_mrconso)
     del(mrconsoDF)
 
-    engine_mrsty = create_engine(SQL_MRSTY_PATH, echo = False)
+    engine_mrsty = create_engine('sqlite:///' + SQL_MRSTY_PATH, echo = False)
     print('Reading file...')
     with open(MRSTY_PATH) as f:
         mrstyDF= pd.read_csv(f, sep='|', header=None,lineterminator='\n',names=['cui','ts','as','names','a2s','num','extra'])# index_col=0,
@@ -112,6 +112,9 @@ def augment_data(other = False):
     Datum = collections.namedtuple('Datum',['id','txt','annotation'])
     Annotation = collections.namedtuple('Annotation',['t','type','offset1','offset2','name','numNote','cui'])
     AnnotationSet = collections.namedtuple('AnnotationSet',['annotations'])
+
+    MRCONSO = dataset.connect('sqlite:///' + SQL_MRCONSO_PATH)
+    MRSTY = dataset.connect('sqlite:///' + SQL_MRSTY_PATH)
 
 
     def getAllSentencesFromXML(filePath):
@@ -213,15 +216,17 @@ def augment_data(other = False):
 
 
     def writePair(sentence,annotationSet):
+        if annotationSet == None:
+            return
         txt = sentence.text
         ann = ''
         for annotation in annotationSet.annotations:
             ann = ann + annotation.t + '\t' + annotation.type + ' ' + annotation.offset1 + ' ' + annotation.offset2  \
                    + '\t' + annotation.name + '\n' + '#' + annotation.numNote + '\tAnnotatorNotes ' +  annotation.t \
                    + '\t' + annotation.cui + '\n'
-        with open(AUGMENTED_DATA_PATH + sentence.id + '.txt','w') as f:
+        with open(AUGMENTED_DATA_PATH + '/' + sentence.id + '.txt','w') as f:
             f.write(txt)
-        with open(AUGMENTED_DATA_PATH + sentence.id + '.ann','w') as f:
+        with open(AUGMENTED_DATA_PATH + '/' + sentence.id + '.ann','w') as f:
             f.write(ann)
 
     
@@ -229,6 +234,9 @@ def augment_data(other = False):
         AUGMENTED_DATA_PATH = AUGMENTED_OTHER_DATA_PATH
     else:
         AUGMENTED_DATA_PATH = AUGMENTED_NO_OTHER_DATA_PATH
+    if not os.path.exists(AUGMENTED_DATA_PATH):
+        os.makedirs(AUGMENTED_DATA_PATH)
+
     sentences = getAllSentencesFromXML(MANTRA_XML_FILE_EMEA_PATH)
     for index,sentence in enumerate(sentences):
         print('Processing and writing sentence ', sentence.id, ' (',index,'/',len(sentences),') of', MANTRA_XML_FILE_EMEA_PATH)
@@ -419,6 +427,7 @@ def main():
     #stratified_split(oversampling = False)
     #stratified_split(oversampling = True, delete = False)
     augment_data(other = False)
+    # shouldn't we treat empty annotations, both ann and ann2? How? Removing them?
     create_experiments()
 
 if __name__ == "__main__":
