@@ -4,7 +4,7 @@
 #SBATCH --output=/gpfs/home/bsc88/bsc88251/experiments/6baseline_word2vec_wikipedia/6baseline_word2vec_wikipedia.out
 #SBATCH --error=/gpfs/home/bsc88/bsc88251/experiments/6baseline_word2vec_wikipedia/6baseline_word2vec_wikipedia.err
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=48
 #SBATCH --time=2-00:00:00
 
 

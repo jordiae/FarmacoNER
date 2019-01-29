@@ -4,7 +4,7 @@
 #SBATCH --output=/gpfs/home/bsc88/bsc88251/experiments/1baseline_glove_original/1baseline_glove_original.out
 #SBATCH --error=/gpfs/home/bsc88/bsc88251/experiments/1baseline_glove_original/1baseline_glove_original.err
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=48
 #SBATCH --time=2-00:00:00
 
 
