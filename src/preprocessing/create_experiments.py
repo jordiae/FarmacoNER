@@ -23,7 +23,7 @@ def create_experiments():
                       'load_all_pretrained_token_embeddings':False,
                       'main_evaluation_mode':'conll',
                       'maximum_number_of_epochs':100,
-                      'number_of_cpu_threads':8,
+                      'number_of_cpu_threads':48,
                       'number_of_gpus':0,
                       'optimizer':'sgd',
                       'output_folder':'../output',
@@ -210,7 +210,7 @@ parameters_filepath = {parameters_filepath}
                 'output': '/gpfs/home/bsc88/bsc88251/ntest/conll2003_debug.out',
                 'error': '/gpfs/home/bsc88/bsc88251/ntest/conll2003_debug.err',
                 'ntasks': 1,
-                'cpuspertask': 12,
+                'cpuspertask': 48,
                 'time': '2-00:00:00',
                 'debug': '#SBATCH --qos=debug',
                 'parameters_filepath': parameters_filepath}
