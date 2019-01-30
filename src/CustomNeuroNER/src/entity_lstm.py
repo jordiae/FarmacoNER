@@ -75,6 +75,8 @@ class EntityLSTM(object):
             self.input_pos_tag_indices = tf.placeholder(tf.int32, [None,dataset.number_of_POS_types], name="input_pos_tag_indices")
             #self.input_pos_tag_indices_vector = tf.placeholder(tf.float32, [None, dataset.number_of_POS_types], name="input_pos_tag_indices_vector")
             #self.input_pos_tag_indices_flat = tf.placeholder(tf.int32, [None], name="input_pos_tag_indices_flat")
+        if parameters['use_gaz']:
+            self.input_gaz_indices = tf.placeholder(tf.int32,[None,1],name="input_gaz_indices")
 
         # Internal parameters
         initializer = tf.contrib.layers.xavier_initializer()
@@ -116,10 +118,23 @@ class EntityLSTM(object):
                         "pos_tag_embedding_weights",
                         shape=[dataset.number_of_POS_types],#, parameters['character_embedding_dimension']],
                         initializer=initializer,
-                        trainable=parameters['freeze_pos'])
+                        trainable=not parameters['freeze_pos'])
                     embedded_pos_tags = tf.nn.embedding_lookup(self.pos_tag_embedding_weights, self.input_pos_tag_indices, name='embedded_pos_tags')
                     if self.verbose: print("embedded_pos_tags: {0}".format(embedded_pos_tags))
                     utils_tf.variable_summaries(self.pos_tag_embedding_weights)
+
+        if parameters['use_gaz']:
+            # GAZ embedding layer
+            with tf.variable_scope("gaz_embedding"):
+                    self.gaz_embedding_weights = tf.get_variable(
+                        "gaz_embedding_weights",
+                        shape=[1],
+                        initializer=initializer,
+                        trainable=not parameters['freeze_gaz'])
+                    embedded_gazs = tf.nn.embedding_lookup(self.gaz_embedding_weights, self.input_gaz_indices, name='embedded_gazs')
+                    if self.verbose: print("embedded_gazs: {0}".format(embedded_gazs))
+                    utils_tf.variable_summaries(self.gaz_embedding_weights)
+
 
         '''
         # POS LSTM layer
@@ -130,19 +145,40 @@ class EntityLSTM(object):
 
         # Concatenate character LSTM outputs and token embeddings
         # Also: POS
-        if parameters['use_character_lstm'] and not parameters['use_pos']:
-            with tf.variable_scope("concatenate_token_and_character_vectors"):
-                if self.verbose: print('embedded_tokens: {0}'.format(embedded_tokens))
-                token_lstm_input = tf.concat([character_lstm_output, embedded_tokens], axis=1, name='token_lstm_input')
-                if self.verbose: print("token_lstm_input: {0}".format(token_lstm_input))
-        elif parameters['use_character_lstm'] and parameters['use_pos']:
-            with tf.variable_scope("concatenate_token_and_character_vectors"):
-                if self.verbose: print('embedded_tokens: {0}'.format(embedded_tokens))
-                if self.verbose: print('embedded_tokens: {0}'.format(embedded_pos_tags))
-                token_lstm_input = tf.concat([embedded_pos_tags,character_lstm_output, embedded_tokens], axis=1, name='token_lstm_input')
-                if self.verbose: print("token_lstm_input: {0}".format(token_lstm_input))
+        if not parameters['use_gaz']:
+            if parameters['use_character_lstm'] and not parameters['use_pos']:
+                with tf.variable_scope("concatenate_token_and_character_vectors"):
+                    if self.verbose: print('embedded_tokens: {0}'.format(embedded_tokens))
+                    token_lstm_input = tf.concat([character_lstm_output, embedded_tokens], axis=1, name='token_lstm_input')
+                    if self.verbose: print("token_lstm_input: {0}".format(token_lstm_input))
+            elif parameters['use_character_lstm'] and parameters['use_pos']:
+                with tf.variable_scope("concatenate_token_and_character_and_pos_vectors"):
+                    if self.verbose: print('embedded_tokens: {0}'.format(embedded_tokens))
+                    if self.verbose: print('embedded_tokens: {0}'.format(embedded_pos_tags))
+                    token_lstm_input = tf.concat([embedded_pos_tags,character_lstm_output, embedded_tokens], axis=1, name='token_lstm_input')
+                    if self.verbose: print("token_lstm_input: {0}".format(token_lstm_input))
+            else:
+                token_lstm_input = embedded_tokens
         else:
-            token_lstm_input = embedded_tokens
+            if parameters['use_character_lstm'] and not parameters['use_pos']:
+                with tf.variable_scope("concatenate_token_and_character_and_gaz_vectors"):
+                    if self.verbose: print('embedded_tokens: {0}'.format(embedded_tokens))
+                    if self.verbose: print('embedded_tokens: {0}'.format(embedded_gazs))
+                    token_lstm_input = tf.concat([embedded_gazs, character_lstm_output, embedded_tokens], axis=1, name='token_lstm_input')
+                    if self.verbose: print("token_lstm_input: {0}".format(token_lstm_input))
+            elif parameters['use_character_lstm'] and parameters['use_pos']:
+                with tf.variable_scope("concatenate_token_and_character_and_pos_and_gaz_vectors"):
+                    if self.verbose: print('embedded_tokens: {0}'.format(embedded_tokens))
+                    if self.verbose: print('embedded_tokens: {0}'.format(embedded_pos_tags))
+                    if self.verbose: print('embedded_tokens: {0}'.format(embedded_gazs))
+                    token_lstm_input = tf.concat([embedded_gazs, embedded_pos_tags,character_lstm_output, embedded_tokens], axis=1, name='token_lstm_input')
+                    if self.verbose: print("token_lstm_input: {0}".format(token_lstm_input))
+            else:
+                with tf.variable_scope("concatenate_token_and_gaz_vectors"):
+                    if self.verbose: print('embedded_tokens: {0}'.format(embedded_tokens))
+                    if self.verbose: print('embedded_tokens: {0}'.format(embedded_pos_tags))
+                    token_lstm_input = tf.concat([embedded_gazs, embedded_tokens], axis=1, name='token_lstm_input')
+                    if self.verbose: print("token_lstm_input: {0}".format(token_lstm_input))
 
 
         # Add dropout

@@ -19,12 +19,24 @@ class Dataset(object):
         self.verbose = verbose
         self.debug = debug
 
+    def _parse_gaz(self,gaz_filepath):
+        with open(gaz_filepath) as f:
+            s = f.read()
+        lines = s.splitlines()
+        gaz_set = set([])
+        for l in lines:
+            gaz_set.add(l)
+        self.gaz_set = gaz_set
+
     def _parse_dataset(self, dataset_filepath, parameters):
         token_count = collections.defaultdict(lambda: 0)
         label_count = collections.defaultdict(lambda: 0)
         character_count = collections.defaultdict(lambda: 0)
         if parameters['use_pos']:
             pos_tag_count = collections.defaultdict(lambda: 0)
+        if parameters['use_gaz']:
+            gaz_count = collections.defaultdict(lambda: 0)
+            self._parse_gaz(parameters['gaz_filepath'])
 
         line_count = -1
         tokens = []
@@ -34,6 +46,9 @@ class Dataset(object):
         new_label_sequence = []
         if parameters['use_pos']:
             new_pos_tag_sequence = []
+        if parameters['use_gaz']:
+            new_gaz_sequence = []
+            gazs = []
         if dataset_filepath:
             f = codecs.open(dataset_filepath, 'r', 'UTF-8')
             for line in f:
@@ -45,23 +60,38 @@ class Dataset(object):
                         tokens.append(new_token_sequence)
                         if parameters['use_pos']:
                             pos_tags.append(new_pos_tag_sequence)
+                        if parameters['use_gaz']:
+                            gazs.append(new_gaz_sequence)
                         new_token_sequence = []
                         new_label_sequence = []
                         new_pos_tag_sequence = []
+                        new_gaz_sequence = []
                     continue
                 token = str(line[0])
                 label = str(line[-1])
                 if parameters['use_pos']:
                     pos_tag = str(line[-4])
+                if parameters['use_gaz']:
+                    gaz = token.lower() in self.gaz_set
+                    if gaz:
+                        gaz = 1
+                    else:
+                        gaz = 0
+
                 token_count[token] += 1
                 label_count[label] += 1
                 if parameters['use_pos']:
                     pos_tag_count[pos_tag] += 1
 
+                if parameters['use_gaz']:
+                    gaz_count[gaz] += 1
+
                 new_token_sequence.append(token)
                 new_label_sequence.append(label)
                 if parameters['use_pos']:
                     new_pos_tag_sequence.append(pos_tag)
+                if parameters['use_gaz']:
+                    new_gaz_sequence.append(gaz)
 
                 for character in token:
                     character_count[character] += 1
@@ -73,11 +103,16 @@ class Dataset(object):
                 tokens.append(new_token_sequence)
                 if parameters['use_pos']:
                     pos_tags.append(new_pos_tag_sequence)
+                if parameters['use_gaz']:
+                    gazs.append(new_gaz_sequence)
             f.close()
         if not parameters['use_pos']:
             pos_tags = None
             pos_tag_count = None
-        return labels, tokens, token_count, label_count, character_count, pos_tags, pos_tag_count
+        if not parameters['use_gaz']:
+            gazs = None
+            gaz_count = None
+        return labels, tokens, token_count, label_count, character_count, pos_tags, pos_tag_count, gazs, gaz_count
 
 
     def _convert_to_indices(self, dataset_types, parameters):
@@ -85,6 +120,8 @@ class Dataset(object):
         labels = self.labels
         if parameters['use_pos']:
             pos_tags = self.pos_tags
+        if parameters['use_gaz']:
+            gazs = self.gazs
         token_to_index = self.token_to_index
         character_to_index = self.character_to_index
         label_to_index = self.label_to_index
@@ -92,6 +129,8 @@ class Dataset(object):
         if parameters['use_pos']:
             index_to_pos_tag = self.index_to_pos_tag
             pos_tag_to_index = self.pos_tag_to_index
+        if parameters['use_gaz']:
+            gaz_to_index = self.gaz_to_index
         
         # Map tokens and labels to their indices
         token_indices = {}
@@ -99,6 +138,8 @@ class Dataset(object):
         characters = {}
         if parameters['use_pos']:
             pos_tag_indices = {}
+        if parameters['use_gaz']:
+            gaz_indices = {}
         token_lengths = {}
         character_indices = {}
         character_indices_padded = {}
@@ -117,7 +158,7 @@ class Dataset(object):
                 token_lengths[dataset_type].append([len(token) for token in token_sequence])
                 longest_token_length_in_sequence = max(token_lengths[dataset_type][-1])
                 character_indices_padded[dataset_type].append([utils.pad_list(temp_token_indices, longest_token_length_in_sequence, self.PADDING_CHARACTER_INDEX) for temp_token_indices in character_indices[dataset_type][-1]])
-            
+
             label_indices[dataset_type] = []
             for label_sequence in labels[dataset_type]:
                 label_indices[dataset_type].append([label_to_index[label] for label in label_sequence])
@@ -126,6 +167,11 @@ class Dataset(object):
                 pos_tag_indices[dataset_type] = []
                 for pos_tag_sequence in pos_tags[dataset_type]:
                     pos_tag_indices[dataset_type].append([pos_tag_to_index[pos_tag] for pos_tag in pos_tag_sequence])
+
+            if parameters['use_gaz']:
+                gaz_indices[dataset_type] = []
+                for gaz_sequence in gazs[dataset_type]:
+                    gaz_indices[dataset_type].append([gaz_to_index[gaz] for gaz in gaz_sequence])
         
         if self.verbose:
             print('token_lengths[\'train\'][0][0:10]: {0}'.format(token_lengths['train'][0][0:10]))
@@ -142,6 +188,9 @@ class Dataset(object):
         if parameters['use_pos']:
             if self.verbose:
                 print('pos_tag_indices[\'train\'][0:10]: {0}'.format(pos_tag_indices['train'][0:10]))
+        if parameters['use_gaz']:
+            if self.verbose:
+                print('gaz_indices[\'train\'][0:10]: {0}'.format(gaz_indices['train'][0:10]))
         # [Numpy 1-hot array](http://stackoverflow.com/a/42263603/395857)
         label_binarizer = sklearn.preprocessing.LabelBinarizer()
         label_binarizer.fit(range(max(index_to_label.keys()) + 1))
@@ -159,6 +208,15 @@ class Dataset(object):
                 pos_tag_vector_indices[dataset_type] = []
                 for pos_tag_indices_sequence in pos_tag_indices[dataset_type]:
                     pos_tag_vector_indices[dataset_type].append(pos_tag_binarizer.transform(pos_tag_indices_sequence))
+        if parameters['use_gaz']:
+            gaz_vector_indices = {}
+            for dataset_type in dataset_types:
+                gaz_vector_indices[dataset_type] = []
+                for gaz_indices_sequence in gaz_indices[dataset_type]:
+                    gaz_vector_index = []
+                    for element in gaz_indices_sequence:
+                        gaz_vector_index.append([element])
+                    gaz_vector_indices[dataset_type].append(gaz_vector_index)
         if self.verbose:
             print('label_vector_indices[\'train\'][0:2]: {0}'.format(label_vector_indices['train'][0:2]))
         if self.verbose:
@@ -170,10 +228,19 @@ class Dataset(object):
             if self.verbose:
                 print('len(pos_tag_vector_indices[\'train\']): {0}'.format(len(pos_tag_vector_indices['train'])))
 
+        if parameters['use_gaz']:
+            if self.verbose:
+                print('gaz_vector_indices[\'train\'][0:2]: {0}'.format(gaz_vector_indices['train'][0:2]))
+            if self.verbose:
+                print('len(gaz_vector_indices[\'train\']): {0}'.format(len(gaz_vector_indices['train'])))
+
         if not parameters['use_pos']:
             pos_tag_indices = None
             pos_tag_vector_indices = None
-        return token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices, pos_tag_indices, pos_tag_vector_indices
+        if not parameters['use_gaz']:
+            gaz_indices = None
+            gaz_vector_indices = None
+        return token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices, pos_tag_indices, pos_tag_vector_indices, gaz_indices, gaz_vector_indices
 
     def update_dataset(self, dataset_filepaths, dataset_types):
         '''
@@ -183,7 +250,7 @@ class Dataset(object):
         for dataset_type in dataset_types:
             self.labels[dataset_type], self.tokens[dataset_type], _, _, _,self.pos_tags[dataset_type] = self._parse_dataset(dataset_filepaths.get(dataset_type, None),parameters)
         
-        token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices, pos_tag_indices, pos_tag_vector_indices = self._convert_to_indices(dataset_types,parameters)
+        token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices, pos_tag_indices, pos_tag_vector_indices, gaz_indices, gaz_vector_indices = self._convert_to_indices(dataset_types,parameters)
         
         self.token_indices.update(token_indices)
         self.label_indices.update(label_indices)
@@ -195,6 +262,9 @@ class Dataset(object):
         if parameters['use_pos']:
             self.pos_tag_indices.update(pos_tag_indices)
             self.pos_tag_vector_indices.update(pos_tag_vector_indices)
+        if parameters['use_gaz']:
+            self.gaz_indices.update(gaz_indices)
+            self.gaz_vector_indices.update(gaz_vector_indices)
 
     def load_dataset(self, dataset_filepaths, parameters, token_to_vector=None):
         '''
@@ -227,13 +297,15 @@ class Dataset(object):
         labels = {}
         tokens = {}
         pos_tags = {}
+        gazs = {}
         label_count = {}
         token_count = {}
         character_count = {}
         pos_tag_count = {}
+        gaz_count = {}
         for dataset_type in ['train', 'valid', 'test', 'deploy']:
             labels[dataset_type], tokens[dataset_type], token_count[dataset_type], label_count[dataset_type], character_count[dataset_type], \
-                pos_tags[dataset_type], pos_tag_count[dataset_type] = self._parse_dataset(dataset_filepaths.get(dataset_type, None),parameters)
+                pos_tags[dataset_type], pos_tag_count[dataset_type],gazs[dataset_type],gaz_count[dataset_type] = self._parse_dataset(dataset_filepaths.get(dataset_type, None),parameters)
 
             if self.verbose: print("dataset_type: {0}".format(dataset_type))
             if self.verbose: print("len(token_count[dataset_type]): {0}".format(len(token_count[dataset_type])))
@@ -272,12 +344,20 @@ class Dataset(object):
             pos_tag_count['all'] = {}
             for pos_tag in list(pos_tag_count['train'].keys()) + list(pos_tag_count['valid'].keys()) + list(pos_tag_count['test'].keys()) + list(pos_tag_count['deploy'].keys()):
                 pos_tag_count['all'][pos_tag] = pos_tag_count['train'][pos_tag] + pos_tag_count['valid'][pos_tag] + pos_tag_count['test'][pos_tag] + pos_tag_count['deploy'][pos_tag]
+
+
+        if parameters['use_gaz']:
+            gaz_count['all'] = {}
+            for gaz in list(gaz_count['train'].keys()) + list(gaz_count['valid'].keys()) + list(gaz_count['test'].keys()) + list(gaz_count['deploy'].keys()):
+                gaz_count['all'][gaz] = gaz_count['train'][gaz] + gaz_count['valid'][gaz] + gaz_count['test'][gaz] + gaz_count['deploy'][gaz]
             
         token_count['all'] = utils.order_dictionary(token_count['all'], 'value_key', reverse = True)
         label_count['all'] = utils.order_dictionary(label_count['all'], 'key', reverse = False)
         character_count['all'] = utils.order_dictionary(character_count['all'], 'value', reverse = True)
         if parameters['use_pos']:
             pos_tag_count['all'] = utils.order_dictionary(pos_tag_count['all'], 'key', reverse = False)
+        if parameters['use_gaz']:
+            gaz_count['all'] = utils.order_dictionary(gaz_count['all'], 'key', reverse = False)
         if self.verbose: print('character_count[\'all\']: {0}'.format(character_count['all']))
 
         token_to_index = {}
@@ -362,6 +442,13 @@ class Dataset(object):
                 pos_tag_to_index[pos_tag] = iteration_number
                 iteration_number += 1
 
+        if parameters['use_gaz']:
+            gaz_to_index = {}
+            iteration_number = 0
+            for gaz, count in gaz_count['all'].items():
+                gaz_to_index[gaz] = iteration_number
+                iteration_number += 1
+
         if self.verbose: print('token_count[\'train\'][0:10]: {0}'.format(list(token_count['train'].items())[0:10]))
         token_to_index = utils.order_dictionary(token_to_index, 'value', reverse = False)
         if self.verbose: print('token_to_index: {0}'.format(token_to_index))
@@ -381,11 +468,18 @@ class Dataset(object):
         if self.verbose: print('index_to_character: {0}'.format(index_to_character))
 
         if parameters['use_pos']:
-            if self.verbose: print('pos_tag_count[\'train\']: {0}'.format(pos_tag['train']))
+            if self.verbose: print('pos_tag_count[\'train\']: {0}'.format(pos_tag_count['train']))
             pos_tag_to_index = utils.order_dictionary(pos_tag_to_index, 'value', reverse = False)
             if self.verbose: print('pos_tag_to_index: {0}'.format(pos_tag_to_index))
             index_to_pos_tag = utils.reverse_dictionary(pos_tag_to_index)
             if self.verbose: print('index_to_pos_tag: {0}'.format(index_to_pos_tag))
+
+        if parameters['use_gaz']:
+            if self.verbose: print('gaz_count[\'train\']: {0}'.format(gaz_count['train']))
+            gaz_to_index = utils.order_dictionary(gaz_to_index, 'value', reverse = False)
+            if self.verbose: print('gaz_to_index: {0}'.format(gaz_to_index))
+            index_to_gaz = utils.reverse_dictionary(gaz_to_index)
+            if self.verbose: print('index_to_gaz: {0}'.format(index_to_gaz))
 
 
         if self.verbose: print('labels[\'train\'][0:10]: {0}'.format(labels['train'][0:10]))
@@ -406,14 +500,19 @@ class Dataset(object):
         if parameters['use_pos']:
             self.index_to_pos_tag = index_to_pos_tag
             self.pos_tag_to_index = pos_tag_to_index
+        if parameters['use_gaz']:
+            self.index_to_gaz = index_to_gaz
+            self.gaz_to_index = gaz_to_index
         if self.verbose: print("len(self.token_to_index): {0}".format(len(self.token_to_index)))
         if self.verbose: print("len(self.index_to_token): {0}".format(len(self.index_to_token)))
         self.tokens = tokens
         self.labels = labels
         if parameters['use_pos']:
             self.pos_tags = pos_tags
+        if parameters['use_gaz']:
+            self.gazs = gazs
 
-        token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices, pos_tag_indices, pos_tag_vector_indices = self._convert_to_indices(dataset_filepaths.keys(),parameters)
+        token_indices, label_indices, character_indices_padded, character_indices, token_lengths, characters, label_vector_indices, pos_tag_indices, pos_tag_vector_indices, gaz_indices, gaz_vector_indices = self._convert_to_indices(dataset_filepaths.keys(),parameters)
         
         self.token_indices = token_indices
         self.label_indices = label_indices
@@ -425,6 +524,9 @@ class Dataset(object):
         if parameters['use_pos']:
             self.pos_tag_indices = pos_tag_indices
             self.pos_tag_vector_indices = pos_tag_vector_indices
+        if parameters['use_gaz']:
+            self.gaz_indices = gaz_indices
+            self.gaz_vector_indices = gaz_vector_indices
 
         self.number_of_classes = max(self.index_to_label.keys()) + 1
         self.vocabulary_size = max(self.index_to_token.keys()) + 1
@@ -434,7 +536,8 @@ class Dataset(object):
         if self.verbose: print("self.number_of_classes: {0}".format(self.number_of_classes))
         if self.verbose: print("self.alphabet_size: {0}".format(self.alphabet_size))
         if self.verbose: print("self.vocabulary_size: {0}".format(self.vocabulary_size))
-        if self.verbose: print("self.number_of_POS_types: {0}".format(self.number_of_POS_types))
+        if parameters['use_pos']:
+            if self.verbose: print("self.number_of_POS_types: {0}".format(self.number_of_POS_types))
 
         # unique_labels_of_interest is used to compute F1-scores.
         self.unique_labels_of_interest = list(self.unique_labels)

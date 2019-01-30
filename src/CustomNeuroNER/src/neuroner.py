@@ -90,7 +90,10 @@ class NeuroNER(object):
                       'use_pretrained_model':False,
                       'verbose':False,
                       'use_pos': False,
-                      'freeze_pos': False}
+                      'freeze_pos': False,
+                      'use_gaz': False,
+                      'freeze_gaz': False,
+                      'gaz_filepath': '../data/gazetteers/gazetteer.txt'}
         # If a parameter file is specified, load it
         if len(parameters_filepath) > 0:
             conf_parameters = configparser.ConfigParser()
@@ -116,12 +119,12 @@ class NeuroNER(object):
                 parameters[k] = float(v)
             elif k in ['remap_unknown_tokens_to_unk', 'use_character_lstm', 'use_crf', 'train_model', 'use_pretrained_model', 'debug', 'verbose',
                      'reload_character_embeddings', 'reload_character_lstm', 'reload_token_embeddings', 'reload_token_lstm', 'reload_feedforward', 'reload_crf',
-                     'check_for_lowercase', 'check_for_digits_replaced_with_zeros', 'freeze_token_embeddings', 'load_only_pretrained_token_embeddings', 'load_all_pretrained_token_embeddings','use_pos', 'freeze_pos']:
+                     'check_for_lowercase', 'check_for_digits_replaced_with_zeros', 'freeze_token_embeddings', 'load_only_pretrained_token_embeddings', 'load_all_pretrained_token_embeddings','use_pos', 'freeze_pos', 'use_gaz', 'freeze_gaz']:
                 parameters[k] = distutils.util.strtobool(v)
         # If loading pretrained model, set the model hyperparameters according to the pretraining parameters 
         if parameters['use_pretrained_model']:
             pretraining_parameters = self._load_parameters(parameters_filepath=os.path.join(parameters['pretrained_model_folder'], 'parameters.ini'), verbose=False)[0]
-            for name in ['use_character_lstm', 'character_embedding_dimension', 'character_lstm_hidden_state_dimension', 'token_embedding_dimension', 'token_lstm_hidden_state_dimension', 'use_crf', 'use_pos']:
+            for name in ['use_character_lstm', 'character_embedding_dimension', 'character_lstm_hidden_state_dimension', 'token_embedding_dimension', 'token_lstm_hidden_state_dimension', 'use_crf', 'use_pos', 'use_gaz']:
                 if parameters[name] != pretraining_parameters[name]:
                     print('WARNING: parameter {0} was overwritten from {1} to {2} to be consistent with the pretrained model'.format(name, parameters[name], pretraining_parameters[name]))
                     parameters[name] = pretraining_parameters[name]
@@ -252,6 +255,9 @@ class NeuroNER(object):
                  verbose=argument_default_value,
                  use_pos = argument_default_value,
                  freeze_pos = argument_default_value,
+                 use_gaz = argument_default_value,
+                 freeze_gaz  =argument_default_value,
+                 gaz_filepath = argument_default_value,
                  argument_default_value=argument_default_value):
         
         # Parse arguments
