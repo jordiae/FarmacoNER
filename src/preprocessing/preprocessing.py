@@ -45,6 +45,11 @@ tag = Med_Tagger()
 
 EMBEDDINGS_PATH = os.path.join(DATA_PATH,'embeddings')
 
+GAZETTEER_PATH = os.path.join(DATA_PATH,'gazetteer')
+NOMENCLATOR_PATH = os.path.join(GAZETTEER_PATH,'20190130_Nomenclator_de_Facturacion.csv')
+
+GAZETTEER_SET_PATH = os.path.join(GAZETTEER_PATH,'principio_activo_gazetteer.txt')
+
 
 def get_data():
     print('Downloading data...')
@@ -420,15 +425,48 @@ def simple_split():
         shutil.copy(source+'/'+a+'.txt', dest + '/' + 'test'+'/'+a+'.txt')
 '''
 
+def build_gazetteer():
+    # Get CSV for building the Gazetteer: follwing URL (can't be easiliy downloaded by the script because the file is dynamically generated. A headless browser woould do tje job)
+    # https://www.mscbs.gob.es/profesionales/nomenclator.do?fechabajahasta=&generico=&codnacional=&metodo=buscarProductos&metodo=buscarProductos&nomlab=&especialidad=&priact_dos=&d-4015021-e=1&priact_uno=&buscar=Buscar&fechaaltadesde=01%2F01%2F1980&fechaaltahasta=&estado=&priact_tres=&6578706f7274=1&ngenerico=&nomaport=&priact_cuatro=&fechabajadesde=
+    'Building gazetteer...'
+    df_nomenclator = pd.read_table(NOMENCLATOR_PATH,sep=',')
+    l_nomenclator = df_nomenclator['Principio activo o asociación de principios activos'].tolist()
+    # check if nan
+    l_nomenclator_filtered = list(filter(lambda x: x == x,l_nomenclator))
+    # remove final ','
+    l_nomenclator_filtered = list(map(lambda x: x if str(x)[-1] != ',' else x[:-1],l_nomenclator_filtered))
+    gaz_set = set([])
+    for term in l_nomenclator_filtered:
+        words = str(term).split()
+        for word in words:
+            for c in range(0,len(word)):
+                if word[c] == ',':
+                    word = word[0:c] + ' ' + word[c+1:len(word)]
+                elif word[c] == '(' or word[c] == ')':
+                    word = word[0:c] + ' ' + word[c+1:len(word)]
+            for word2 in word.split():
+                w = word2.lower()
+                if w[0] == '-':
+                    w = w[1:]
+                if w[-1] == '-':
+                    w = w[:-1]
+                if not w.isdigit() and w not in ['de','por','para','a','te',]:
+                    gaz_set.add(w)
+    with open(GAZETTEER_SET_PATH,'w') as f:
+        f.writelines(["%s\n" % item  for item in gaz_set])
+
+
+
+
 def main():
     #get_data()
     #organize_dir()
     #get_pos(path = FARMACOS_PATH + '-one')
     #stratified_split(oversampling = False)
     #stratified_split(oversampling = True, delete = False)
-    augment_data(other = False)
+    #augment_data(other = False)
     # shouldn't we treat empty annotations, both ann and ann2? How? Removing them?
-    create_experiments()
-
+    #create_experiments()
+    build_gazetteer()
 if __name__ == "__main__":
     main()
