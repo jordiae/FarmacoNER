@@ -36,7 +36,7 @@ class Dataset(object):
             pos_tag_count = collections.defaultdict(lambda: 0)
         if parameters['use_gaz']:
             gaz_count = collections.defaultdict(lambda: 0)
-            self._parse_gaz(parameters['gaz_filepath'])
+            #self._parse_gaz(parameters['gaz_filepath'])
 
         line_count = -1
         tokens = []
@@ -278,6 +278,9 @@ class Dataset(object):
         else:
             token_to_vector = {}
         if self.verbose: print("len(token_to_vector): {0}".format(len(token_to_vector)))
+
+        if parameters['use_gaz']:
+            self._parse_gaz(parameters['gaz_filepath'])
 
         # Load pretraining dataset to ensure that index to label is compatible to the pretrained model,
         #   and that token embeddings that are learned in the pretrained model are loaded properly.

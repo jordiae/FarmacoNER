@@ -128,7 +128,7 @@ class EntityLSTM(object):
             with tf.variable_scope("gaz_embedding"):
                     self.gaz_embedding_weights = tf.get_variable(
                         "gaz_embedding_weights",
-                        shape=[1],
+                        shape=[2],#[1],
                         initializer=initializer,
                         trainable=not parameters['freeze_gaz'])
                     embedded_gazs = tf.nn.embedding_lookup(self.gaz_embedding_weights, self.input_gaz_indices, name='embedded_gazs')

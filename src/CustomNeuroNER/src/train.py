@@ -54,6 +54,17 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
         if parameters['use_pos']:
             feed_dict[model.input_pos_tag_indices] = dataset.pos_tag_vector_indices[dataset_type][i]
         if parameters['use_gaz']:
+            '''
+            xxx = []
+            for xx in dataset.gaz_vector_indices[dataset_type][i]:
+                yy = []
+                for x in xx:
+                    if x == 0:
+                        yy.append(0)
+                    elif x == 1:
+                        yy.append(1)
+                xxx.append(yy)
+            '''
             feed_dict[model.input_gaz_indices] = dataset.gaz_vector_indices[dataset_type][i]
         unary_scores, predictions = sess.run([model.unary_scores, model.predictions], feed_dict)
         if parameters['use_crf']:

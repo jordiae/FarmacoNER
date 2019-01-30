@@ -41,7 +41,7 @@ TAGGER_PATH = 'PlanTL-SPACCC_POS-TAGGER-9b64add/Med_Tagger'
 sys.path.append(TAGGER_PATH)
 
 from Med_Tagger import Med_Tagger
-tag = Med_Tagger()
+#tag = Med_Tagger()
 
 EMBEDDINGS_PATH = os.path.join(DATA_PATH,'embeddings')
 
@@ -368,6 +368,7 @@ def stratified_split(oversampling,delete = False):
 
 
 def get_pos(path):
+    tag = Med_Tagger()
     print('Getting POS of ' + path)
     files = os.listdir(path)
 
@@ -376,6 +377,7 @@ def get_pos(path):
             with open(path + '/' + file,'r') as f:
                 parsed = tag.parse(f.read())
             tag.write_brat(parsed,path + '/' + file[:-4] + '.ann2')
+    del(tag)
 def create_experiments():
     print('Creating experiments...')
     pass
@@ -450,7 +452,7 @@ def build_gazetteer():
                     w = w[1:]
                 if w[-1] == '-':
                     w = w[:-1]
-                if not w.isdigit() and w not in ['de','por','para','a','te',]:
+                if not w.isdigit() and w not in ['de','por','para','a','te']:
                     gaz_set.add(w)
     with open(GAZETTEER_SET_PATH,'w') as f:
         f.writelines(["%s\n" % item  for item in gaz_set])
@@ -461,12 +463,12 @@ def build_gazetteer():
 def main():
     #get_data()
     #organize_dir()
-    #get_pos(path = FARMACOS_PATH + '-one')
+    get_pos(path = FARMACOS_PATH + '-one')
     #stratified_split(oversampling = False)
     #stratified_split(oversampling = True, delete = False)
     #augment_data(other = False)
     # shouldn't we treat empty annotations, both ann and ann2? How? Removing them?
     #create_experiments()
-    build_gazetteer()
+    #build_gazetteer()
 if __name__ == "__main__":
     main()
