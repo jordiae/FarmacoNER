@@ -37,11 +37,13 @@ FARMACOS_STRATIFIED_PATH = os.path.join(DATA_PATH,'farmacos-final-one-stratified
 FARMCOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_PATH = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling')
 FARMACOS_STRATIFIED_OVERSAMPLING_DELETING = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-deleting')
 
+'''
 TAGGER_PATH = 'PlanTL-SPACCC_POS-TAGGER-9b64add/Med_Tagger'
 sys.path.append(TAGGER_PATH)
 
 from Med_Tagger import Med_Tagger
 #tag = Med_Tagger()
+'''
 
 EMBEDDINGS_PATH = os.path.join(DATA_PATH,'embeddings')
 
@@ -49,6 +51,10 @@ GAZETTEER_PATH = os.path.join(DATA_PATH,'gazetteer')
 NOMENCLATOR_PATH = os.path.join(GAZETTEER_PATH,'20190130_Nomenclator_de_Facturacion.csv')
 
 GAZETTEER_SET_PATH = os.path.join(GAZETTEER_PATH,'principio_activo_gazetteer.txt')
+
+POS_TAGGER_URL = 'https://github.com/PlanTL/SPACCC_POS-TAGGER/archive/master.zip'
+POS_TAGGER_ZIP_PATH = os.path.join(DATA_PATH,'master')
+POS_TAGGER_PATH = os.path.join(DATA_PATH,'SPACCC_POS-TAGGER-master','SPACCC_POS-TAGGER-master','Med_Tagger')
 
 
 def get_data():
@@ -368,15 +374,22 @@ def stratified_split(oversampling,delete = False):
 
 
 def get_pos(path):
+    sys.path.append(POS_TAGGER_PATH)
+    from Med_Tagger import Med_Tagger
     tag = Med_Tagger()
     print('Getting POS of ' + path)
     files = os.listdir(path)
+    import time
+    time.sleep(50)
 
     for file in files:
         if file.endswith(".txt"):
             with open(path + '/' + file,'r') as f:
-                parsed = tag.parse(f.read())
-            tag.write_brat(parsed,path + '/' + file[:-4] + '.ann2')
+                content = f.read()
+                parsed = tag.parse(content)
+                while len(parsed) == 0:
+                    parsed = tag.parse(content)
+                tag.write_brat(content,parsed,path + '/' + file[:-4] + '.ann2')
     del(tag)
 def create_experiments():
     print('Creating experiments...')
@@ -458,11 +471,18 @@ def build_gazetteer():
         f.writelines(["%s\n" % item  for item in gaz_set])
 
 
+def get_pos_tagger():
+    print('Getting POS Tagger...')
+    os.system('wget ' + POS_TAGGER_URL + ' -P ' + DATA_PATH)
+    os.system('unzip ' + POS_TAGGER_ZIP_PATH + ' -d ' + os.path.join(DATA_PATH,'SPACCC_POS-TAGGER-master'))
+    os.system(os.path.join(DATA_PATH,'SPACCC_POS-TAGGER-master','SPACCC_POS-TAGGER-master','compila_freeling.sh'))
+
 
 
 def main():
     #get_data()
     #organize_dir()
+    #get_pos_tagger()
     get_pos(path = FARMACOS_PATH + '-one')
     #stratified_split(oversampling = False)
     #stratified_split(oversampling = True, delete = False)
