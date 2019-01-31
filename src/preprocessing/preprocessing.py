@@ -38,7 +38,12 @@ AUGMENTED_DATA_PATH = ''
 FARMACOS_STRATIFIED_PATH = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split')
 FARMCOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_PATH = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling')
 FARMACOS_STRATIFIED_OVERSAMPLING_DELETING = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-deleting')
-
+FARMACOS_STRATIFIED_AUGMENTED_NO_OTHER_PATH = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-augmented-no-other')
+FARMACOS_STRATIFIED_AUGMENTED_OTHER_PATH = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-augmented-other')
+FARMACOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_AUGMENTED_NO_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-augmented-no-other')
+FARMACOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_AUGMENTED_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-augmented-other')
+FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_NO_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-deleting-augmented-no-other')
+FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-deleting-augmented-other')
 '''
 TAGGER_PATH = 'PlanTL-SPACCC_POS-TAGGER-9b64add/Med_Tagger'
 sys.path.append(TAGGER_PATH)
@@ -479,6 +484,47 @@ def get_pos_tagger():
     os.system('unzip ' + POS_TAGGER_ZIP_PATH + ' -d ' + os.path.join(DATA_PATH,'SPACCC_POS-TAGGER-master'))
     os.system(os.path.join(DATA_PATH,'SPACCC_POS-TAGGER-master','SPACCC_POS-TAGGER-master','compila_freeling.sh'))
 
+def add_augmented_data(oversampling, delete = False, other = False):
+    print('Adding augmented data...')
+    if other:
+        source_augmented = AUGMENTED_OTHER_DATA_PATH
+    else:
+        source_augmented = AUGMENTED_NO_OTHER_DATA_PATH
+    if oversampling:
+        if delete:
+            source_farmacos = FARMACOS_STRATIFIED_OVERSAMPLING_DELETING
+        else:
+            source_farmacos = FARMCOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_PATH
+    else:
+        source_farmacos = FARMACOS_STRATIFIED_PATH
+    '''
+    FARMACOS_STRATIFIED_AUGMENTED_NO_OTHER_PATH = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-augmented-no-other')
+FARMACOS_STRATIFIED_AUGMENTED_OTHER_PATH = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-augmented-other')
+FARMACOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_AUGMENTED_NO_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-augmented-no-other')
+FARMACOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_AUGMENTED_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-augmented-other')
+FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_NO_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-deleting-augmented-no-other')
+FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-deleting-augmented-other')
+'''
+    if not oversampling:
+        if not other:
+            dest = FARMACOS_STRATIFIED_AUGMENTED_NO_OTHER_PATH
+        else:
+            dest = FARMACOS_STRATIFIED_AUGMENTED_OTHER_PATH
+    else:
+        if not delete:
+            if not other:
+                dest = FARMACOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_AUGMENTED_NO_OTHER_PATH
+            else:
+                dest = FARMACOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_AUGMENTED_OTHER_PATH
+        else:
+            if not other:
+                dest = FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_NO_OTHER_PATH
+            else:
+                dest = FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_OTHER_PATH
+    if not os.path.exists(dest):
+        os.system('cp -r ' + source_farmacos + ' ' + dest)
+        os.system('cp -a ' + source_augmented + ' ' + os.path.join(dest,'train'))
+
 
 
 def main():
@@ -486,11 +532,13 @@ def main():
     #organize_dir()
     #get_pos_tagger()
     #get_pos(path = FARMACOS_PATH + '-one')
-    stratified_split(oversampling = False)
-    stratified_split(oversampling = True, delete = False)
+    #stratified_split(oversampling = False)
+    #stratified_split(oversampling = True, delete = False)
     #augment_data(other = False)
     #get_pos(AUGMENTED_NO_OTHER_DATA_PATH)
     #build_gazetteer()
+    add_augmented_data(oversampling = False, delete = False, other = False)
+    add_augmented_data(oversampling = True, delete = False, other = False)
     #create_experiments()
 if __name__ == "__main__":
     main()
