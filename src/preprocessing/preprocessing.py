@@ -523,7 +523,7 @@ FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_OTHER_PATH  = os.path.join(D
                 dest = FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_OTHER_PATH
     if not os.path.exists(dest):
         os.system('cp -r ' + source_farmacos + ' ' + dest)
-        os.system('cp -a ' + source_augmented + ' ' + os.path.join(dest,'train'))
+        os.system('cp -rT ' + source_augmented + ' ' + os.path.join(dest,'train'))
 
 
 
