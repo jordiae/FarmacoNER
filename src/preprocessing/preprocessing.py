@@ -33,6 +33,8 @@ MANTRA_XML_FILE_MEDLINE_PATH =os.path.join(MANTRA_XML_PATH,'Medline_es_EC21_man.
 AUGMENTED_NO_OTHER_DATA_PATH = os.path.join(DATA_PATH, 'augmentedDataNoOther')
 AUGMENTED_OTHER_DATA_PATH = os.path.join(DATA_PATH, 'augmentedDataOther')
 
+AUGMENTED_DATA_PATH = ''
+
 FARMACOS_STRATIFIED_PATH = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split')
 FARMCOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_PATH = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling')
 FARMACOS_STRATIFIED_OVERSAMPLING_DELETING = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-deleting')
@@ -258,7 +260,7 @@ def augment_data(other = False):
         print('Processing and writing sentence ', sentence.id, ' (',index,'/',len(sentences),') of', MANTRA_XML_FILE_MEDLINE_PATH)
         writePair(sentence,createAnnotationSet(sentence))
 
-    get_pos(AUGMENTED_DATA_PATH)
+    #get_pos(AUGMENTED_DATA_PATH)
 
 
 def stratified_split(oversampling,delete = False):
@@ -483,12 +485,12 @@ def main():
     #get_data()
     #organize_dir()
     #get_pos_tagger()
-    get_pos(path = FARMACOS_PATH + '-one')
-    #stratified_split(oversampling = False)
-    #stratified_split(oversampling = True, delete = False)
+    #get_pos(path = FARMACOS_PATH + '-one')
+    stratified_split(oversampling = False)
+    stratified_split(oversampling = True, delete = False)
     #augment_data(other = False)
-    # shouldn't we treat empty annotations, both ann and ann2? How? Removing them?
-    #create_experiments()
+    #get_pos(AUGMENTED_NO_OTHER_DATA_PATH)
     #build_gazetteer()
+    #create_experiments()
 if __name__ == "__main__":
     main()
