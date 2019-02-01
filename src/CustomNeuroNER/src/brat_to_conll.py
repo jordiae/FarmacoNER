@@ -29,6 +29,23 @@ def get_sentences_and_tokens_from_PlanTL(text, med_tagger):
     return sentences
 '''
 
+# edge cases: sentence ending without punctuation sign, or '?', '!'
+def get_sentences_and_tokens_from_pos_tagger(pos_tags):
+    sentences = []
+    sentence = []
+    for pos_tag in pos_tags:
+        token_dict = {}
+        token_dict['start'] = pos_tag['start']
+        token_dict['end'] = pos_tag['end']
+        token_dict['text'] = pos_tag['text']
+        sentence.append(token_dict)
+        if pos_tag['text'] == '.' or  pos_tag['text'] == '!' or pos_tag['text'] == '?':
+            sentences.append(sentence)
+            sentence = []
+    if len(sentence) > 0:
+        sentences.append(sentence)
+    return sentences
+
 def get_start_and_end_offset_of_token_from_spacy(token):
     start = token.idx
     end = start + len(token)
@@ -157,7 +174,7 @@ def get_pos_tags_from_brat(text,annotation_filepath2, verbose=False):
                     input("Press Enter to continue...")
                 '''
                 # add to entitys data
-                pos_tags.append(pos_tag['type'])
+                pos_tags.append(pos_tag)#['type'])
     if verbose: print("\n\n")
     
     return pos_tags
@@ -178,26 +195,19 @@ def check_brat_annotation_and_text_compatibility(brat_folder):
         text, entities = get_entities_from_brat(text_filepath, annotation_filepath)
     print("Done.")
 
-def brat_to_conll(input_folder, output_filepath, tokenizer, language, use_pos = False):
+def brat_to_conll(input_folder, output_filepath, tokenizer, language):
     '''
     Assumes '.txt' and '.ann' files are in the input_folder.
     Checks for the compatibility between .txt and .ann at the same time.
     '''
-    if use_pos:
-        '''
-        TAGGER_PATH = '../../PlanTL-SPACCC_POS-TAGGER-9b64add/Med_Tagger'
-        sys.path.append(TAGGER_PATH)
-        from Med_Tagger import Med_Tagger
-        from Med_Tagger import elimina_tildes
-        med_tagger = Med_Tagger()
-        '''
+    if tokenizer == 'spacy':
+        spacy_nlp = spacy.load(language)
+    elif tokenizer == 'stanford':
+        core_nlp = StanfordCoreNLP('http://localhost:{0}'.format(9000))
+    elif tokenizer == 'pos':
+        use_pos = True
     else:
-        if tokenizer == 'spacy':
-            spacy_nlp = spacy.load(language)
-        elif tokenizer == 'stanford':
-            core_nlp = StanfordCoreNLP('http://localhost:{0}'.format(9000))
-        else:
-            raise ValueError("tokenizer should be either 'spacy' or 'stanford'.")
+        raise ValueError("tokenizer should be either 'spacy' or 'stanford'.")
     verbose = False
     dataset_type =  os.path.basename(input_folder)
     print("Formatting {0} set from BRAT to CONLL... ".format(dataset_type), end='')
@@ -222,7 +232,8 @@ def brat_to_conll(input_folder, output_filepath, tokenizer, language, use_pos = 
 
         if use_pos:
             pos_tags = get_pos_tags_from_brat(text,annotation_filepath2)
-            sentences = get_sentences_and_tokens_from_spacy(text, spacy_nlp)
+            #sentences = get_sentences_and_tokens_from_spacy(text, spacy_nlp)
+            sentences = get_sentences_and_tokens_from_pos_tagger(pos_tags)
             #sentences = get_sentences_and_tokens_from_PlanTL(text,med_tagger)
         else:
             if tokenizer == 'spacy':
@@ -262,7 +273,7 @@ def brat_to_conll(input_folder, output_filepath, tokenizer, language, use_pos = 
                     inside = False
                 previous_token_label = token['label']
                 if use_pos:
-                    pos_tag = pos_tags[token_counter]
+                    pos_tag = pos_tags[token_counter]['type']
                     token_counter += 1
                     if verbose: print('{0} {1} {2} {3} {4} {5}\n'.format(token['text'], base_filename, token['start'], token['end'],pos_tag,gold_label))
                     output_file.write('{0} {1} {2} {3} {4} {5}\n'.format(token['text'], base_filename, token['start'], token['end'],pos_tag,gold_label))
