@@ -330,7 +330,10 @@ class NeuroNER(object):
         utils.create_folder_if_not_exists(model_folder)
         with open(os.path.join(model_folder, 'parameters.ini'), 'w') as parameters_file:
             conf_parameters.write(parameters_file)
-        pickle.dump(dataset, open(os.path.join(model_folder, 'dataset.pickle'), 'wb'))
+        try:
+            pickle.dump(dataset, open(os.path.join(model_folder, 'dataset.pickle'), 'wb'))
+        except:
+            print("WARNING: Couldn't dump dataset.pickle due to memory error (probably due to dataset size)")
             
         tensorboard_log_folder = os.path.join(stats_graph_folder, 'tensorboard_logs')
         utils.create_folder_if_not_exists(tensorboard_log_folder)

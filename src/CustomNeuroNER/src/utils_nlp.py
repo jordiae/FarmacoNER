@@ -36,8 +36,28 @@ def load_pretrained_token_embeddings(parameters):
         if len(cur_line)==0:continue
         token = cur_line[0]
         vector = np.array([float(x) for x in cur_line[1:]])
+        '''
+        if len(vector) != parameters['token_embedding_dimension']:
+            print(vector)
+            print()
+            print(token)
+            print()
+            print(cur_line)
+            input('WARNING')
+        '''
+        if len(vector) != parameters['token_embedding_dimension']:
+            continue
+        
         token_to_vector[token] = vector
     file_input.close()
+    '''
+    print(len(token_to_vector))
+    token_to_vector_string = ''
+    for key, value in token_to_vector.items():
+        token_to_vector_string += key + ' ' + str(len(value)) + '\n'
+    with open('/home/bscuser/test/token_to_vector_string2.txt','w') as f:
+        f.write(token_to_vector_string)
+    '''
     return token_to_vector
 
 
