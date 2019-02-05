@@ -49,6 +49,8 @@ FARMACOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_AUGMENTED_NO_OTHER_PATH  = os.
 FARMACOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_AUGMENTED_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-augmented-other')
 FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_NO_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-deleting-augmented-no-other')
 FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-deleting-augmented-other')
+
+FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM = FARMACOS_STRATIFIED_PATH + '-without-unclear-no-norm'
 '''
 TAGGER_PATH = 'PlanTL-SPACCC_POS-TAGGER-9b64add/Med_Tagger'
 sys.path.append(TAGGER_PATH)
@@ -604,7 +606,57 @@ def select_proportional_subset_of_augmented(source):
     print('Kept',normalizables,'normalizables and',proteinas,'proteinas')
 
 
-
+def remove_labels(labels,src,dst):
+    print('Removing labels',str(labels),'from',src,'(dst=',dst,')')
+    if not os.path.exists(dst):
+        os.makedirs(dst)
+    for dataset in ['train','valid','test']:
+        source = os.path.join(src,dataset)
+        dest = os.path.join(dst,dataset)
+        if not os.path.exists(dest):
+            os.makedirs(dest)
+        ann_filepaths = sorted(glob.glob(os.path.join(source, '*.ann')))
+        for ann_filepath in ann_filepaths:
+            with open(ann_filepath,'r') as f:
+                lines = f.readlines()
+            i = 0
+            content = ''
+            while i < len(lines):
+                #print(i,len(lines),ann_filepath)
+                to_remove = False
+                for label in labels:
+                     if lines[i].count(label) > 0:
+                        if i+1 != len(lines) and lines[i+1][0] == '#':
+                            i += 2
+                        else:
+                            i += 1
+                        to_remove = True
+                        break
+                if to_remove:
+                    continue
+                '''
+                if lines[i].count('NO_NORMALIZABLES') > 0 or lines[i].count('UNCLEAR') > 0:
+                    i += 2 
+                '''
+                #else:
+                
+                if i+1 != len(lines) and lines[i+1][0] == '#':
+                    content = content + lines[i] + '\n' + lines[i+1] +'\n'
+                    i += 2
+                else:
+                    content = content + lines[i] + '\n'
+                    i += 1
+            base_filename = os.path.splitext(os.path.basename(ann_filepath))[0]
+            dest_ann_filepath = os.path.join(dest, base_filename + '.ann')
+            with open(dest_ann_filepath,'w') as f:
+                f.write(content)
+            source_ann2_filepath = os.path.join(source, base_filename + '.ann2')
+            dest_ann2_filepath = os.path.join(dest, base_filename + '.ann2')
+            shutil.copy(source_ann2_filepath,dest_ann2_filepath)
+            source_txt_filepath = os.path.join(source, base_filename + '.txt')
+            dest_txt_filepath = os.path.join(dest, base_filename + '.txt')
+            shutil.copy(source_txt_filepath,dest_txt_filepath)
+        
 
 
 def main():
@@ -623,7 +675,8 @@ def main():
     #add_augmented_data(oversampling = True, delete = False, other = False)
     #brat_to_conll_for_POS_and_augmented()
     #fix_augmented()
-    select_proportional_subset_of_augmented(AUGMENTED_FIXED_PATH)
+    #select_proportional_subset_of_augmented(AUGMENTED_FIXED_PATH)
+    remove_labels(labels = ['UNCLEAR','NO_NORMALIZABLES'], src = FARMACOS_STRATIFIED_PATH, dst = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM)
     #generate_experiments()
 if __name__ == "__main__":
     main()
