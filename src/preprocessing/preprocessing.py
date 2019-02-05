@@ -641,10 +641,11 @@ def remove_labels(labels,src,dst):
                 #else:
                 
                 if i+1 != len(lines) and lines[i+1][0] == '#':
-                    content = content + lines[i] + '\n' + lines[i+1] +'\n'
+                    #content = content + lines[i] + '\n' + lines[i+1] +'\n'
+                    content = content + lines[i] + lines[i+1]
                     i += 2
                 else:
-                    content = content + lines[i] + '\n'
+                    content = content + lines[i] #+ '\n'
                     i += 1
             base_filename = os.path.splitext(os.path.basename(ann_filepath))[0]
             dest_ann_filepath = os.path.join(dest, base_filename + '.ann')
