@@ -87,6 +87,8 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
                 if '-DOCSTART-' in split_line[0] or len(split_line) == 0 or len(split_line[0]) == 0:
                     continue
                 else:
+                    #if parameters['tokenizer'] == 'pos': # assuming bioes
+                    #    split_line.pop(-3)
                     token_original = split_line[0]
                     if parameters['tagging_format'] == 'bioes':
                         split_line.pop()

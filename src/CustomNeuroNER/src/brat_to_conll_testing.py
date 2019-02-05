@@ -30,6 +30,22 @@ def get_sentences_and_tokens_from_PlanTL(text, med_tagger):
 '''
 
 # edge cases: sentence ending without punctuation sign, or '?', '!'
+def get_sentences_and_tokens_from_pos_tagger_old(pos_tags):
+    sentences = []
+    sentence = []
+    for pos_tag in pos_tags:
+        token_dict = {}
+        token_dict['start'] = pos_tag['start']
+        token_dict['end'] = pos_tag['end']
+        token_dict['text'] = pos_tag['text']
+        sentence.append(token_dict)
+        if pos_tag['text'] == '.' or  pos_tag['text'] == '!' or pos_tag['text'] == '?':
+            sentences.append(sentence)
+            sentence = []
+    if len(sentence) > 0:
+        sentences.append(sentence)
+    return sentences
+
 def get_sentences_and_tokens_from_pos_tagger(pos_tags):
     sentences = []
     sentence = []
@@ -39,9 +55,6 @@ def get_sentences_and_tokens_from_pos_tagger(pos_tags):
             token_dict['start'] = pos_tag['start']
             token_dict['end'] = pos_tag['end'] 
             token_dict['text'] = pos_tag['text']
-            if token_dict['text'] in ['\n', '\t', ' ', '']:
-                #input('Enter')
-                continue
             sentence.append(token_dict)
             if pos_tag['text'] == '.' or  pos_tag['text'] == '!' or pos_tag['text'] == '?':
                 sentences.append(sentence)
@@ -50,34 +63,15 @@ def get_sentences_and_tokens_from_pos_tagger(pos_tags):
             i = pos_tag['start']
             current_token = ''
             current_start = pos_tag['start']
-            while i < pos_tag['end']:# - 1:
+            while i < pos_tag['end']-1:
                 #print(pos_tag['text'],i,pos_tag['start'],i-pos_tag['start'])
                 #print()
-                try:
-                    current_char = pos_tag['text'][i-pos_tag['start']]
-                except:
+                current_char = pos_tag['text'][i-pos_tag['start']]
+                if current_char == ' ' and current_token != '':
                     token_dict = {}
                     token_dict['start'] = current_start
                     token_dict['end'] = i+1
-                    token_dict['text'] = pos_tag['text'][current_start-pos_tag['start']:i+1-pos_tag['start']]
-                    #print()
-                    #print('Adding',pos_tag['text'][current_start-pos_tag['start']:i+1-pos_tag['start']])
-                    break
-
-                #print(current_char, current_token)
-                #print()
-                #print(current_token,current_char)
-                if (current_char == ' ' and current_token != '') or i+1 == pos_tag['end']:
-                    token_dict = {}
-                    token_dict['start'] = current_start
-                    token_dict['end'] = i+1
-                    token_dict['text'] = pos_tag['text'][current_start-pos_tag['start']:i+1-pos_tag['start']]
-                    #print()
-                    #print('Adding',pos_tag['text'][current_start-pos_tag['start']:i+1-pos_tag['start']])
-                    '''
-                    if pos_tag['text'][current_start-pos_tag['start']:i+1-pos_tag['start']] in ['\n', '\t', ' ', '']:
-                        input('Enter')
-                    '''
+                    token_dict['text'] = pos_tag['text'][current_start:i+1]
                     sentence.append(token_dict)
                     current_token = ''
                     if token_dict['text'] == '.' or  token_dict['text'] == '!' or token_dict['text'] == '?':
@@ -87,9 +81,7 @@ def get_sentences_and_tokens_from_pos_tagger(pos_tags):
                     if current_token == '':
                         current_start = i
                     current_token += current_char
-
                 i += 1
-    #input('Enter')
     if len(sentence) > 0:
         sentences.append(sentence)
     return sentences
@@ -210,10 +202,6 @@ def get_pos_tags_from_brat(text,annotation_filepath2, verbose=False):
                 pos_tag['text'] = ' '.join(anno[4:])
                 if verbose:
                     print("pos_tag: {0}".format(pos_tag))
-                '''
-                if pos_tag['text'] in ['\n', '\t', ' ', '']:
-                    continue
-                '''
                 # Check compatibility between brat text and anootation
                 '''
                 if utils_nlp.replace_unicode_whitespaces_with_ascii_whitespace(text[pos_tag['start']:pos_tag['end']]) != \
@@ -303,13 +291,6 @@ def brat_to_conll(input_folder, output_filepath, tokenizer, language):
             inside = False
             previous_token_label = 'O'
             for token in sentence:
-                '''
-                if use_pos and token['text'] in ['\n', '\t', ' ', '']:
-                    print('EMPTY TOKEN')
-                    exit()
-                '''
-                    #token_counter += 1
-                    #continue
                 token['label'] = 'O'
                 for entity in entities:
                     if entity['start'] <= token['start'] < entity['end'] or \
@@ -337,6 +318,8 @@ def brat_to_conll(input_folder, output_filepath, tokenizer, language):
                 previous_token_label = token['label']
                 if use_pos:
                     pos_tag = pos_tags[token_counter]['type']
+                    #token_counter += 1
+                    #token_counter += len(pos_tags[token_counter]['text'].split())
                     if not rep_pos and len(pos_tags[token_counter]['text'].split()) > 1:
                         rep_pos = True
                         rep_pos_max = len(pos_tags[token_counter]['text'].split())
@@ -348,12 +331,8 @@ def brat_to_conll(input_folder, output_filepath, tokenizer, language):
                             rep_pos_counter = 0
                     else:
                         token_counter += 1
-                    if len('{0} {1} {2} {3} {4} {5}\n'.format(token['text'], base_filename, token['start'], token['end'],pos_tag,gold_label).split()) != 6:
-                        continue
-                        input('{0} {1} {2} {3} {4} {5}\n'.format(token['text'], base_filename, token['start'], token['end'],pos_tag,gold_label))
-
-                    if verbose: print('{0} {1} {2} {3} {4} {5}\n'.format(token['text'].split()[0], base_filename, token['start'], token['end'],pos_tag,gold_label))
-                    output_file.write('{0} {1} {2} {3} {4} {5}\n'.format(token['text'].split()[0], base_filename, token['start'], token['end']-(len(token['text']) - len(token['text'].split()[0])),pos_tag,gold_label))
+                    if verbose: print('{0} {1} {2} {3} {4} {5}\n'.format(token['text'], base_filename, token['start'], token['end'],pos_tag,gold_label))
+                    output_file.write('{0} {1} {2} {3} {4} {5}\n'.format(token['text'], base_filename, token['start'], token['end'],pos_tag,gold_label))
                 else:
                     if verbose: print('{0} {1} {2} {3} {4}\n'.format(token['text'], base_filename, token['start'], token['end'], gold_label))
                     output_file.write('{0} {1} {2} {3} {4}\n'.format(token['text'], base_filename, token['start'], token['end'], gold_label))

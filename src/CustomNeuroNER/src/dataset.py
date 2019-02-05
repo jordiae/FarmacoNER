@@ -69,8 +69,12 @@ class Dataset(object):
                     continue
                 token = str(line[0])
                 label = str(line[-1])
+                # beware: in both cases we are assuming bioes
                 if parameters['use_pos']:
-                    pos_tag = str(line[-4])
+                    if parameters['tokenizer'] == 'pos':
+                        pos_tag = str(line[-2])
+                    else:
+                        pos_tag = str(line[-3])
                 if parameters['use_gaz']:
                     gaz = token.lower() in self.gaz_set
                     if gaz:
