@@ -13,7 +13,12 @@ import math
 from sklearn.model_selection import train_test_split
 import sys
 import random
-
+from brat_to_conll_compatible_tokenization import brat_to_conll
+import fix_brat3
+from create_experiments import create_experiments
+from create_experiments import create_experiments2
+import math
+import glob
 
 
 SEED = 1234
@@ -62,6 +67,10 @@ GAZETTEER_SET_PATH = os.path.join(GAZETTEER_PATH,'principio_activo_gazetteer.txt
 POS_TAGGER_URL = 'https://github.com/PlanTL/SPACCC_POS-TAGGER/archive/master.zip'
 POS_TAGGER_ZIP_PATH = os.path.join(DATA_PATH,'master')
 POS_TAGGER_PATH = os.path.join(DATA_PATH,'SPACCC_POS-TAGGER-master','SPACCC_POS-TAGGER-master','Med_Tagger')
+
+AUGMENTED_FIXED_PATH =AUGMENTED_NO_OTHER_DATA_PATH+'Fixed2'
+
+AUGMENTED_SUBSET_PATH = AUGMENTED_FIXED_PATH + 'Subset'
 
 
 def get_data():
@@ -398,9 +407,10 @@ def get_pos(path):
                     parsed = tag.parse(content)
                 tag.write_brat(content,parsed,path + '/' + file[:-4] + '.ann2')
     del(tag)
-def create_experiments():
+def generate_experiments():
     print('Creating experiments...')
-    pass
+    #create_experiments.create_experiments()
+    create_experiments.create_experiments2()
 
 '''
 def simple_split():
@@ -526,6 +536,76 @@ FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_OTHER_PATH  = os.path.join(D
         os.system('cp -rT ' + source_augmented + ' ' + os.path.join(dest,'train'))
 
 
+def brat_to_conll_for_POS_and_augmented():
+    sys.path.append(POS_TAGGER_PATH)
+    from Med_Tagger import Med_Tagger
+    tag = Med_Tagger()
+    for path in [FARMACOS_STRATIFIED_PATH,FARMACOS_STRATIFIED_OVERSAMPLING_DELETING,FARMACOS_STRATIFIED_AUGMENTED_OTHER_PATH,\
+        FARMACOS_STRATIFIED_AUGMENTED_NO_OTHER_PATH,FARMACOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_AUGMENTED_OTHER_PATH,\
+        FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_NO_OTHER_PATH,FARMACOS_STRATIFIED_OVERSAMPLING_WITHOUT_DELETING_AUGMENTED_NO_OTHER_PATH]:
+
+        if not os.path.exists(path):
+            continue
+        if not os.path.exists(path + '-CONLL'):
+            os.makedirs(path + '-CONLL')
+        for dataset in ['train','valid','test']:
+            brat_to_conll(input_folder = os.path.join(path,dataset), output_filepath = os.path.join(path + '-CONLL',dataset + '.txt'), tag = tag)
+    del(tag)
+
+def fix_augmented():
+    fix_brat3.fix_malformatted_brat(AUGMENTED_FIXED_PATH)
+
+def select_proportional_subset_of_augmented(source):
+    print('Selecting proportional subset of',source)
+    def get_frequencies(annotation_filepath):
+        content = ''
+        freqs = {}
+        with open(annotation_filepath,'r') as f:
+            content = f.read()
+        freqs['NORMALIZABLES'] = content.count('NORMALIZABLES') # beware: non-overlapping, but without spaces
+        freqs['NO_NORMALIZABLES'] = content.count('NO_NORMALIZABLES')
+        freqs['PROTEINAS'] = content.count('PROTEINAS')
+        freqs['UNCLEAR'] = content.count('UNCLEAR')
+        return freqs
+    dest = AUGMENTED_SUBSET_PATH
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+    nsamples = 10000
+    proportion_normalizables_original = 4448/(3009+4448)
+    proportion_proteinas_original = 3009/(3009+4448)
+    num_normalizables = math.floor(nsamples*proportion_normalizables_original)
+    num_proteinas = math.floor(nsamples*proportion_proteinas_original)
+    path = os.path.join('..')
+    text_filepaths = sorted(glob.glob(os.path.join(source, '*.txt')))
+    normalizables = 0
+    proteinas = 0
+    random.seed = SEED
+    random.shuffle(text_filepaths)
+    for text_filepath in text_filepaths:
+        if normalizables == num_normalizables and proteinas == num_proteinas:
+            break
+        base_filename = os.path.splitext(os.path.basename(text_filepath))[0]
+        annotation_filepath = os.path.join(os.path.dirname(text_filepath), base_filename + '.ann')
+        freqs = get_frequencies(annotation_filepath)
+        if freqs['NO_NORMALIZABLES'] > 1:
+            continue
+        elif freqs['UNCLEAR'] > 1:
+            continue
+        elif normalizables < num_normalizables and freqs['NORMALIZABLES'] == 1 and freqs['PROTEINAS'] == 0:
+            normalizables += 1
+        elif proteinas < num_proteinas and freqs['NORMALIZABLES'] == 0 and freqs['PROTEINAS'] == 1:
+            proteinas += 1
+        else:
+            continue
+        shutil.copy(text_filepath, os.path.join(dest,base_filename+'.txt'))
+        shutil.copy(annotation_filepath, os.path.join(dest,base_filename+'.ann'))
+        annotation_filepath2 = annotation_filepath +'2'
+        shutil.copy(annotation_filepath2, os.path.join(dest,base_filename+'.ann2'))
+    print('Kept',normalizables,'normalizables and',proteinas,'proteinas')
+
+
+
+
 
 def main():
     #get_data()
@@ -534,11 +614,16 @@ def main():
     #get_pos(path = FARMACOS_PATH + '-one')
     #stratified_split(oversampling = False)
     #stratified_split(oversampling = True, delete = False)
+    # Beware: some of the annotations of the augmented data are mal-formatted.
+    # This is fixed with fix_augmented()
     #augment_data(other = False)
     #get_pos(AUGMENTED_NO_OTHER_DATA_PATH)
     #build_gazetteer()
-    add_augmented_data(oversampling = False, delete = False, other = False)
-    add_augmented_data(oversampling = True, delete = False, other = False)
-    #create_experiments()
+    #add_augmented_data(oversampling = False, delete = False, other = False)
+    #add_augmented_data(oversampling = True, delete = False, other = False)
+    #brat_to_conll_for_POS_and_augmented()
+    #fix_augmented()
+    select_proportional_subset_of_augmented(AUGMENTED_FIXED_PATH)
+    #generate_experiments()
 if __name__ == "__main__":
     main()
