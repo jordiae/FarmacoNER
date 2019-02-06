@@ -15,8 +15,7 @@ import sys
 import random
 from brat_to_conll_compatible_tokenization import brat_to_conll
 import fix_brat3
-from create_experiments import create_experiments
-from create_experiments import create_experiments2
+import create_experiments
 import math
 import glob
 
@@ -51,6 +50,9 @@ FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_NO_OTHER_PATH  = os.path.joi
 FARMACOS_STRATIFIED_OVERSAMPLING_DELETING_AUGMENTED_OTHER_PATH  = os.path.join(DATA_PATH,'farmacos-final-one-stratified-split-oversampling-deleting-augmented-other')
 
 FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM = FARMACOS_STRATIFIED_PATH + '-without-unclear-no-norm'
+
+FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM_AUGMENTED_SUBSET = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM + '-augmented-subset'
+
 '''
 TAGGER_PATH = 'PlanTL-SPACCC_POS-TAGGER-9b64add/Med_Tagger'
 sys.path.append(TAGGER_PATH)
@@ -555,7 +557,7 @@ def brat_to_conll_for_POS_and_augmented():
     del(tag)
 
 def fix_augmented():
-    fix_brat3.fix_malformatted_brat(AUGMENTED_FIXED_PATH)
+    fix_brat3.fix_malformatted_brat(AUGMENTED_NO_OTHER_DATA_PATH,AUGMENTED_FIXED_PATH)
 
 def select_proportional_subset_of_augmented(source):
     print('Selecting proportional subset of',source)
@@ -589,9 +591,9 @@ def select_proportional_subset_of_augmented(source):
         base_filename = os.path.splitext(os.path.basename(text_filepath))[0]
         annotation_filepath = os.path.join(os.path.dirname(text_filepath), base_filename + '.ann')
         freqs = get_frequencies(annotation_filepath)
-        if freqs['NO_NORMALIZABLES'] > 1:
+        if freqs['NO_NORMALIZABLES'] > 0:
             continue
-        elif freqs['UNCLEAR'] > 1:
+        elif freqs['UNCLEAR'] > 0:
             continue
         elif normalizables < num_normalizables and freqs['NORMALIZABLES'] == 1 and freqs['PROTEINAS'] == 0:
             normalizables += 1
@@ -658,6 +660,22 @@ def remove_labels(labels,src,dst):
             dest_txt_filepath = os.path.join(dest, base_filename + '.txt')
             shutil.copy(source_txt_filepath,dest_txt_filepath)
         
+def add_augmented_subset_data(farmacos, augmented, dest):
+    if not os.path.exists(dest):
+        #os.makedirs(dest)
+        shutil.copytree(farmacos,dest)
+
+    dest_train = os.path.join(dest,'train')
+    text_filepaths = sorted(glob.glob(os.path.join(augmented, '*.txt')))
+    i = 0
+    for text_filepath in text_filepaths:
+        i += 1
+        print('Adding',i,'of',len(text_filepaths))
+        base_filename = os.path.splitext(os.path.basename(text_filepath))[0]
+        shutil.copy(text_filepath,os.path.join(dest_train,base_filename+'.txt'))
+        shutil.copy(os.path.join(augmented,base_filename+'.ann'),os.path.join(dest_train,base_filename+'.ann'))
+        shutil.copy(os.path.join(augmented,base_filename+'.ann2'),os.path.join(dest_train,base_filename+'.ann2'))
+
 
 
 def main():
@@ -676,8 +694,9 @@ def main():
     #add_augmented_data(oversampling = True, delete = False, other = False)
     #brat_to_conll_for_POS_and_augmented()
     #fix_augmented()
-    #select_proportional_subset_of_augmented(AUGMENTED_FIXED_PATH)
-    remove_labels(labels = ['UNCLEAR','NO_NORMALIZABLES'], src = FARMACOS_STRATIFIED_PATH, dst = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM)
+    select_proportional_subset_of_augmented(AUGMENTED_FIXED_PATH)
+    #remove_labels(labels = ['UNCLEAR','NO_NORMALIZABLES'], src = FARMACOS_STRATIFIED_PATH, dst = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM)
+    add_augmented_subset_data(farmacos = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM, augmented = AUGMENTED_SUBSET_PATH, dest = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM_AUGMENTED_SUBSET)
     #generate_experiments()
 if __name__ == "__main__":
     main()

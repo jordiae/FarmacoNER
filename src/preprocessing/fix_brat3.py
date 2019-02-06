@@ -100,7 +100,8 @@ def fix_one(text_filepath):
                     '''
                     #exit()
                     #input("Press Enter to continue...")
-                elif False:#else:
+                '''
+                #elif False:#else:
                     print("OKAY")
                     print("\ttext: {0}".format(text[entity['start']:entity['end']]))
                     print("\tanno: {0}".format(entity['text']))
@@ -113,6 +114,7 @@ def fix_one(text_filepath):
                     print()
                     #exit()
                     #input("Press Enter to continue...")
+                '''
         return malformatted
         if malformatted and ann != '':
             print('FIXED a malformatted annotation: ', annotation_filepath)
@@ -152,10 +154,12 @@ def fix_one(text_filepath):
         '''
         return malformatted
 
-def fix_malformatted_brat(path):
+def fix_malformatted_brat(path,dst):
     text_filepaths = sorted(glob.glob(os.path.join(path, '*.txt')))
     i = 0
     malcount = 0
+    if not os.path.exists(dst):
+        os.makedirs(dst)
     for text_filepath in text_filepaths:
         i += 1
         if i % 10 == 0:
@@ -166,11 +170,15 @@ def fix_malformatted_brat(path):
         else:
             base_filename = os.path.splitext(os.path.basename(text_filepath))[0]
             annotation_filepath = os.path.join(os.path.dirname(text_filepath), base_filename + '.ann')
+            annotation2_filepath = os.path.join(os.path.dirname(text_filepath), base_filename + '.ann2')
             src = text_filepath
-            dest = os.path.join('/home/bscuser/Descargas/FarmacoNERDef/data/onlyFixedAugmentedNoOtherAsTraining/train',base_filename + '.txt')
+            dest = os.path.join(dst,base_filename + '.txt')
             copyfile(src, dest)
             src = annotation_filepath
-            dest = os.path.join('/home/bscuser/Descargas/FarmacoNERDef/data/onlyFixedAugmentedNoOtherAsTraining/train',base_filename + '.ann')
+            dest = os.path.join(dst,base_filename + '.ann')
+            copyfile(src, dest)
+            src = annotation2_filepath
+            dest = os.path.join(dst,base_filename + '.ann2')
             copyfile(src, dest)
 
     print('Malformatted =',malcount, 'Total=',len(text_filepaths), '%=', (malcount/len(text_filepaths))*100)
