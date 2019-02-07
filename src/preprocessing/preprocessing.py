@@ -53,6 +53,12 @@ FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM = FARMACOS_STRATIFIED_PATH + '-w
 
 FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM_AUGMENTED_SUBSET = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM + '-augmented-subset'
 
+FARMACOS_STRATIFIED_ONLY_NO_NORM = FARMACOS_STRATIFIED_PATH + '-only-no-norm'
+
+FARMACOS_STRATIFIED_ONLY_NO_NORM_AUGMENTED_SUBSET = FARMACOS_STRATIFIED_ONLY_NO_NORM + '-augmented-subset'
+
+FARMACOS_STRATIFIED_ONLY_UNCLEAR = FARMACOS_STRATIFIED_PATH + '-only-unclear'
+
 '''
 TAGGER_PATH = 'PlanTL-SPACCC_POS-TAGGER-9b64add/Med_Tagger'
 sys.path.append(TAGGER_PATH)
@@ -75,6 +81,8 @@ POS_TAGGER_PATH = os.path.join(DATA_PATH,'SPACCC_POS-TAGGER-master','SPACCC_POS-
 AUGMENTED_FIXED_PATH =AUGMENTED_NO_OTHER_DATA_PATH+'Fixed2'
 
 AUGMENTED_SUBSET_PATH = AUGMENTED_FIXED_PATH + 'Subset'
+
+AUGMENTED_SUBSET_PATH_ONLY_NO_NORM = AUGMENTED_FIXED_PATH + 'Subset' + '-only-no-norm'
 
 
 def get_data():
@@ -414,7 +422,9 @@ def get_pos(path):
 def generate_experiments():
     print('Creating experiments...')
     #create_experiments.create_experiments()
-    create_experiments.create_experiments2()
+    #create_experiments.create_experiments2()
+    #create_experiments.create_experiments3()
+    create_experiments.create_experiments4()
 
 '''
 def simple_split():
@@ -676,6 +686,50 @@ def add_augmented_subset_data(farmacos, augmented, dest):
         shutil.copy(os.path.join(augmented,base_filename+'.ann'),os.path.join(dest_train,base_filename+'.ann'))
         shutil.copy(os.path.join(augmented,base_filename+'.ann2'),os.path.join(dest_train,base_filename+'.ann2'))
 
+def select_subset_augmented_only_label(src, dst, label):
+    source = src
+    print('Selecting subset of',source,'with only',label,'and moving data to',dst)
+    def get_frequencies(annotation_filepath):
+        content = ''
+        freqs = {}
+        with open(annotation_filepath,'r') as f:
+            content = f.read()
+        freqs['NORMALIZABLES'] = content.count('\tNORMALIZABLES') # beware: non-overlapping, but without spaces
+        freqs['NO_NORMALIZABLES'] = content.count('NO_NORMALIZABLES')
+        freqs['PROTEINAS'] = content.count('PROTEINAS')
+        freqs['UNCLEAR'] = content.count('UNCLEAR')
+        return freqs
+    dest = dst
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+    nsamples = 50
+    path = os.path.join('..')
+    text_filepaths = sorted(glob.glob(os.path.join(source, '*.txt')))
+    counter = 0
+    random.seed = SEED
+    random.shuffle(text_filepaths)
+    for text_filepath in text_filepaths:
+        if counter >= nsamples:
+            break
+        base_filename = os.path.splitext(os.path.basename(text_filepath))[0]
+        annotation_filepath = os.path.join(os.path.dirname(text_filepath), base_filename + '.ann')
+        freqs = get_frequencies(annotation_filepath)
+        skip = False
+        for key, value in freqs.items():
+            if key != label and value > 0:
+                skip = True
+                break
+        if skip:
+            continue
+        if freqs[label] > 0:
+            counter += 1
+        else:
+            continue
+        shutil.copy(text_filepath, os.path.join(dest,base_filename+'.txt'))
+        shutil.copy(annotation_filepath, os.path.join(dest,base_filename+'.ann'))
+        annotation_filepath2 = annotation_filepath +'2'
+        shutil.copy(annotation_filepath2, os.path.join(dest,base_filename+'.ann2'))
+    print('Kept',counter,label)
 
 
 def main():
@@ -694,9 +748,16 @@ def main():
     #add_augmented_data(oversampling = True, delete = False, other = False)
     #brat_to_conll_for_POS_and_augmented()
     #fix_augmented()
-    select_proportional_subset_of_augmented(AUGMENTED_FIXED_PATH)
+    #select_proportional_subset_of_augmented(AUGMENTED_FIXED_PATH)
     #remove_labels(labels = ['UNCLEAR','NO_NORMALIZABLES'], src = FARMACOS_STRATIFIED_PATH, dst = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM)
-    add_augmented_subset_data(farmacos = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM, augmented = AUGMENTED_SUBSET_PATH, dest = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM_AUGMENTED_SUBSET)
-    #generate_experiments()
+    #add_augmented_subset_data(farmacos = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM, augmented = AUGMENTED_SUBSET_PATH, dest = FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM_AUGMENTED_SUBSET)
+    
+    #remove_labels(labels = ['UNCLEAR','PROTEINAS','\tNORMALIZABLES'], src = FARMACOS_STRATIFIED_PATH, dst = FARMACOS_STRATIFIED_ONLY_NO_NORM)
+    #select_subset_augmented_only_label(src = AUGMENTED_FIXED_PATH, dst =AUGMENTED_SUBSET_PATH_ONLY_NO_NORM , label = 'NO_NORMALIZABLES')
+    #add_augmented_subset_data(farmacos = FARMACOS_STRATIFIED_ONLY_NO_NORM, augmented = AUGMENTED_SUBSET_PATH_ONLY_NO_NORM, dest = FARMACOS_STRATIFIED_ONLY_NO_NORM_AUGMENTED_SUBSET)
+    
+    #remove_labels(labels = ['NO_NORMALIZABLES','PROTEINAS','\tNORMALIZABLES'], src = FARMACOS_STRATIFIED_PATH, dst = FARMACOS_STRATIFIED_ONLY_UNCLEAR)
+    
+    generate_experiments()
 if __name__ == "__main__":
     main()
