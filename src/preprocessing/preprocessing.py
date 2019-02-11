@@ -55,9 +55,13 @@ FARMACOS_STRATIFIED_WITHOUT_UNCLEAR_AND_NO_NORM_AUGMENTED_SUBSET = FARMACOS_STRA
 
 FARMACOS_STRATIFIED_ONLY_NO_NORM = FARMACOS_STRATIFIED_PATH + '-only-no-norm'
 
+FARMACOS_STRATIFIED_ONLY_NO_NORM_LESS_SENTENCES = FARMACOS_STRATIFIED_ONLY_NO_NORM + '-less-sentences'
+
 FARMACOS_STRATIFIED_ONLY_NO_NORM_AUGMENTED_SUBSET = FARMACOS_STRATIFIED_ONLY_NO_NORM + '-augmented-subset'
 
 FARMACOS_STRATIFIED_ONLY_UNCLEAR = FARMACOS_STRATIFIED_PATH + '-only-unclear'
+
+FARMACOS_STRATIFIED_ONLY_UNCLEAR_LESS_SENTENCES = FARMACOS_STRATIFIED_ONLY_UNCLEAR + '-less-sentences'
 
 '''
 TAGGER_PATH = 'PlanTL-SPACCC_POS-TAGGER-9b64add/Med_Tagger'
@@ -732,6 +736,132 @@ def select_subset_augmented_only_label(src, dst, label):
     print('Kept',counter,label)
 
 
+def get_start_and_end_offset_of_token_from_spacy(token):
+    start = token.idx
+    end = start + len(token)
+    return start, end
+
+def get_sentences_and_tokens_from_spacy(text, spacy_nlp):
+    document = spacy_nlp(text)
+    # sentences
+    sentences = []
+    for span in document.sents:
+        sentence = [document[i] for i in range(span.start, span.end)]
+        sentence_tokens = []
+        for token in sentence:
+            token_dict = {}
+            token_dict['start'], token_dict['end'] = get_start_and_end_offset_of_token_from_spacy(token)
+            token_dict['text'] = text[token_dict['start']:token_dict['end']]
+            if token_dict['text'].strip() in ['\n', '\t', ' ', '']:
+                continue
+            # Make sure that the token text does not contain any space
+            if len(token_dict['text'].split(' ')) != 1:
+                print("WARNING: the text of the token contains space character, replaced with hyphen\n\t{0}\n\t{1}".format(token_dict['text'], 
+                                                                                                                           token_dict['text'].replace(' ', '-')))
+                token_dict['text'] = token_dict['text'].replace(' ', '-')
+            sentence_tokens.append(token_dict)
+        sentences.append(sentence_tokens)
+    return sentences
+
+def remove_phrases_without_annotations_for_minority(source,dest):
+    random.seed(SEED)
+    import spacy
+    shutil.copytree(source, dest)
+    #subdirs = os.listdir(dest)
+    #subdirs = ['train']
+    subdirs = ['train','valid']
+    for subdir in subdirs:
+        #files = os.listdir(os.path.join(source,subdir))
+        text_filepaths = sorted(glob.glob(os.path.join(dest,subdir, '*.txt')))
+        i = 0
+        for text_filepath in text_filepaths:
+            i += 1
+            #print(i,'of',len(text_filepaths))
+            base_filename = os.path.splitext(os.path.basename(text_filepath))[0]
+            annotation_filepath = os.path.join(os.path.dirname(text_filepath), base_filename + '.ann')
+            annotation2_filepath = os.path.join(os.path.dirname(text_filepath), base_filename + '.ann2')
+            with open(annotation_filepath,'r') as f_ann:
+                content = f_ann.read()
+                if len(content) == 0:
+                    #print('empty')
+                    os.unlink(text_filepath)
+                    os.unlink(annotation_filepath)
+                    os.unlink(annotation2_filepath)
+                '''
+                else:
+                    annotations = []
+                    for line in content.splitlines():
+                        anno = line.split()
+                        id_anno = anno[0]
+                        # parse entity
+                        if id_anno[0] == 'T':
+                            entity = {}
+                            entity['id'] = id_anno
+                            entity['type'] = anno[1]
+                            entity['start'] = int(anno[2])
+                            entity['end'] = int(anno[3])
+                            #entity['text'] = elimina_tildes(' '.join(anno[4:]))
+                            entity['text'] = ' '.join(anno[4:])
+                            annotations.append(tuple((entity['start'],entity['end'])))
+                    #with open(text_filepath,'r+') as f_txt:
+                    new_text = ''
+                    with open(text_filepath,'r') as f_txt:
+                        spacy_nlp = spacy.load('es')
+                        text = f_txt.read()
+                        new_text = text
+                        sentences = get_sentences_and_tokens_from_spacy(text,spacy_nlp)
+                        #new_text = ''
+                        sentence_has_annotation_counter = 0
+                        sentence_counter = 0
+                        for sentence in sentences:    
+                            token_start = sentence[0]['start']
+                            token_end = sentence[len(sentence)-1]['end']
+                            for annotation in annotations:
+                                ann_start, ann_end = annotation
+                                if ann_start >= token_start and ann_start < token_end:
+                                    sentence_has_annotation_counter += 1
+                            sentence_counter += 1
+                        prop_to_keep = round(100*sentence_has_annotation_counter/sentence_counter)
+                        #print(base_filename,prop_to_keep,sentence_has_annotation_counter,sentence_counter)
+                        #print(text)
+                        #print(content)
+                        for sentence in sentences:
+                            sentence_has_annotation = False
+                            token_start = sentence[0]['start']
+                            token_end = sentence[len(sentence)-1]['end']
+                            for annotation in annotations:
+                                ann_start, ann_end = annotation
+                                if ann_start >= token_start and ann_start < token_end:
+                                    sentence_has_annotation = True
+                                    break
+                            if sentence_has_annotation:
+                                #new_text += text[token_start:token_end]
+                                pass
+                            else:
+                                
+                                kept = False
+                                ran = random.randint(1,100)
+                                if ran <= prop_to_keep:
+                                    #new_text += text[token_start:token_end]
+                                    kept = True
+                                else:
+                                    xx = len(new_text)
+                                    new_text = new_text[0:token_start]+(len(text[token_start:token_end])*' ') + new_text[token_end:len(new_text)]
+                                    yy = len(new_text)
+                                    if xx != yy:
+                                        input('hey')
+                                #print(kept)
+                                #print(prop_to_keep,ran,kept)
+                    #print(new_text)
+                    with open(text_filepath,'w') as f_txt:
+                        f_txt.write(new_text)
+                '''
+
+
+
+
+
+
 def main():
     #get_data()
     #organize_dir()
@@ -758,6 +888,9 @@ def main():
     
     #remove_labels(labels = ['NO_NORMALIZABLES','PROTEINAS','\tNORMALIZABLES'], src = FARMACOS_STRATIFIED_PATH, dst = FARMACOS_STRATIFIED_ONLY_UNCLEAR)
     
+    #remove_phrases_without_annotations_for_minority(source = FARMACOS_STRATIFIED_ONLY_NO_NORM, dest =FARMACOS_STRATIFIED_ONLY_NO_NORM_LESS_SENTENCES)
+    remove_phrases_without_annotations_for_minority(source = FARMACOS_STRATIFIED_ONLY_UNCLEAR, dest =FARMACOS_STRATIFIED_ONLY_UNCLEAR_LESS_SENTENCES)
+
     generate_experiments()
 if __name__ == "__main__":
     main()
