@@ -27,6 +27,8 @@ def train_step(sess, dataset, sequence_number, model, parameters):
         feed_dict[model.input_pos_tag_indices] = dataset.pos_tag_vector_indices['train'][sequence_number]
     if parameters['use_gaz']:
         feed_dict[model.input_gaz_indices] = dataset.gaz_vector_indices['train'][sequence_number]
+    if parameters['use_aff']:
+        feed_dict[model.input_aff_indices] = dataset.aff_vector_indices['train'][sequence_number]
     _, _, loss, accuracy, transition_params_trained = sess.run(
                     [model.train_op, model.global_step, model.loss, model.accuracy, model.transition_parameters],
                     feed_dict)
@@ -66,6 +68,8 @@ def prediction_step(sess, dataset, dataset_type, model, transition_params_traine
                 xxx.append(yy)
             '''
             feed_dict[model.input_gaz_indices] = dataset.gaz_vector_indices[dataset_type][i]
+        if parameters['use_aff']:
+            feed_dict[model.input_aff_indices] = dataset.aff_vector_indices[dataset_type][i]
         unary_scores, predictions = sess.run([model.unary_scores, model.predictions], feed_dict)
         if parameters['use_crf']:
             predictions, _ = tf.contrib.crf.viterbi_decode(unary_scores, transition_params_trained)
