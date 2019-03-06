@@ -8,7 +8,7 @@ def create_experiments():
     Experiment = collections.namedtuple('Experiment',['name','oversampling','delete','pos','augmentation','other','embedding','stratified'])
     def create_experiment(experiment):
         parameters = {'pretrained_model_folder':'../trained_models/conll_2003_en',
-                      'dataset_text_folder':'../data/conll2003/en',
+                      'dataset_text_folder':'/gpfs/projects/bsc88/CustomNeuroNERFinalCandidate1/data/farmacos-final-one-stratified-split/farmacos-final-one',
                       'character_embedding_dimension':25,
                       'character_lstm_hidden_state_dimension':25,
                       'check_for_digits_replaced_with_zeros':True,
@@ -48,11 +48,12 @@ def create_experiments():
                       'use_pretrained_model':False,
                       'verbose':False,
                       'use_pos': False,
+                      'use_aff': False,
                       'freeze_pos': False}
-        parameters_filepath = '/gpfs/home/bsc88/bsc88251/experiments/' + experiment.name + '/' + experiment.name + '_parameters.ini'
-        output_folder = '/gpfs/home/bsc88/bsc88251/experiments/' + experiment.name + '/' + experiment.name + '_output'
-        dataset_text_folder = '/gpfs/scratch/bsc88/bsc88251/data/' + experiment.name + '/farmacos-final-one'
-        token_pretrained_embedding_filepath = '/gpfs/scratch/bsc88/bsc88251/data/word_vectors/' + experiment.embedding
+        parameters_filepath = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments' + experiment.name + '/' + experiment.name + '_parameters.ini'
+        output_folder = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments/' + experiment.name + '/' + experiment.name + '_output'
+        dataset_text_folder = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/data/' + experiment.name + '/farmacos-final-one'
+        token_pretrained_embedding_filepath = '/gpfs/projects/bsc88/Resources/Embeddings_ES/Scielo_Wikipedia/' + experiment.embedding
 
         if experiment.stratified:
             dataset_text_folder += '-stratified-split'
@@ -111,6 +112,7 @@ use_character_lstm = {use_character_lstm}
 character_embedding_dimension = {character_embedding_dimension}
 character_lstm_hidden_state_dimension = {character_lstm_hidden_state_dimension}
 
+use_aff = {use_aff}
 use_pos = {use_pos}
 
 # In order to use random initialization instead, set token_pretrained_embedding_filepath to empty string, as below:
@@ -210,13 +212,13 @@ parameters_filepath = {parameters_filepath}
                 'output': '/gpfs/home/bsc88/bsc88251/ntest/conll2003_debug.out',
                 'error': '/gpfs/home/bsc88/bsc88251/ntest/conll2003_debug.err',
                 'ntasks': 1,
-                'cpuspertask': 48,
-                'time': '2-00:00:00',
-                'debug': '#SBATCH --qos=debug',
+                'cpuspertask': 12,
+                'time': '18:00:00',
+                'debug': '#SBATCH --qos=bsc',
                 'parameters_filepath': parameters_filepath}
         script['debug'] = ''
-        script['output'] = '/gpfs/home/bsc88/bsc88251/experiments/' + experiment.name + '/' + experiment.name + '.out'
-        script['error'] = '/gpfs/home/bsc88/bsc88251/experiments/' + experiment.name + '/' + experiment.name + '.err'
+        script['output'] = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments/' + experiment.name + '/' + experiment.name + '.out'
+        script['error'] = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments/' + experiment.name + '/' + experiment.name + '.err'
         script['jobname'] = experiment.name
 
         job_template = '''#!/bin/bash
@@ -282,6 +284,9 @@ python3 main.py --parameters_filepath {parameters_filepath}
 
     create_experiment(Experiment(name = '8baseline_word2vec_scielo_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
         other = False, embedding = 'W2V_scielo_wiki_w10_c5_300_15epoch.txt', stratified = True))
+
+
+
 
 def create_experiments2():
     EXPERIMENTS_PATH2 = os.path.join('..','..','experiments2')
