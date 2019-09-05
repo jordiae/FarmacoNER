@@ -8,7 +8,7 @@ def create_experiments():
     Experiment = collections.namedtuple('Experiment',['name','oversampling','delete','pos','augmentation','other','embedding','stratified'])
     def create_experiment(experiment):
         parameters = {'pretrained_model_folder':'../trained_models/conll_2003_en',
-                      'dataset_text_folder':'../data/conll2003/en',
+                      'dataset_text_folder':'/gpfs/projects/bsc88/CustomNeuroNERFinalCandidate1/data/farmacos-final-one-stratified-split/farmacos-final-one',
                       'character_embedding_dimension':25,
                       'character_lstm_hidden_state_dimension':25,
                       'check_for_digits_replaced_with_zeros':True,
@@ -48,11 +48,12 @@ def create_experiments():
                       'use_pretrained_model':False,
                       'verbose':False,
                       'use_pos': False,
+                      'use_aff': False,
                       'freeze_pos': False}
-        parameters_filepath = '/gpfs/home/bsc88/bsc88251/experiments/' + experiment.name + '/' + experiment.name + '_parameters.ini'
-        output_folder = '/gpfs/home/bsc88/bsc88251/experiments/' + experiment.name + '/' + experiment.name + '_output'
-        dataset_text_folder = '/gpfs/scratch/bsc88/bsc88251/data/' + experiment.name + '/farmacos-final-one'
-        token_pretrained_embedding_filepath = '/gpfs/scratch/bsc88/bsc88251/data/word_vectors/' + experiment.embedding
+        parameters_filepath = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments' + experiment.name + '/' + experiment.name + '_parameters.ini'
+        output_folder = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments/' + experiment.name + '/' + experiment.name + '_output'
+        dataset_text_folder = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/data/' + experiment.name + '/farmacos-final-one'
+        token_pretrained_embedding_filepath = '/gpfs/projects/bsc88/Resources/Embeddings_ES/Scielo_Wikipedia/' + experiment.embedding
 
         if experiment.stratified:
             dataset_text_folder += '-stratified-split'
@@ -111,6 +112,7 @@ use_character_lstm = {use_character_lstm}
 character_embedding_dimension = {character_embedding_dimension}
 character_lstm_hidden_state_dimension = {character_lstm_hidden_state_dimension}
 
+use_aff = {use_aff}
 use_pos = {use_pos}
 
 # In order to use random initialization instead, set token_pretrained_embedding_filepath to empty string, as below:
@@ -210,13 +212,13 @@ parameters_filepath = {parameters_filepath}
                 'output': '/gpfs/home/bsc88/bsc88251/ntest/conll2003_debug.out',
                 'error': '/gpfs/home/bsc88/bsc88251/ntest/conll2003_debug.err',
                 'ntasks': 1,
-                'cpuspertask': 48,
-                'time': '2-00:00:00',
-                'debug': '#SBATCH --qos=debug',
+                'cpuspertask': 12,
+                'time': '18:00:00',
+                'debug': '#SBATCH --qos=bsc',
                 'parameters_filepath': parameters_filepath}
         script['debug'] = ''
-        script['output'] = '/gpfs/home/bsc88/bsc88251/experiments/' + experiment.name + '/' + experiment.name + '.out'
-        script['error'] = '/gpfs/home/bsc88/bsc88251/experiments/' + experiment.name + '/' + experiment.name + '.err'
+        script['output'] = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments/' + experiment.name + '/' + experiment.name + '.out'
+        script['error'] = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments/' + experiment.name + '/' + experiment.name + '.err'
         script['jobname'] = experiment.name
 
         job_template = '''#!/bin/bash
@@ -259,39 +261,42 @@ python3 main.py --parameters_filepath {parameters_filepath}
         
 
     # embeddings
-    create_experiment(Experiment(name = '1baseline_glove_original',oversampling = False, delete = False, pos = False, augmentation = False, \
-        other = False, embedding = 'glove-sbwc.i25.vec', stratified = True))
+    #create_experiment(Experiment(name = '1_1baseline_glove_original',oversampling = False, delete = False, pos = False, augmentation = False, \
+        #other = False, embedding = 'glove-sbwc.i25.vec', stratified = True))
 
-    create_experiment(Experiment(name = '2baseline_fasttext_original',oversampling = False, delete = False, pos = False, augmentation = False, \
-        other = False, embedding = 'fasttext-sbwc.vec', stratified = True))
+    #create_experiment(Experiment(name = '2baseline_fasttext_original',oversampling = False, delete = False, pos = False, augmentation = False, \
+        #other = False, embedding = 'fasttext-sbwc.vec', stratified = True))
 
-    create_experiment(Experiment(name = '3baseline_fasttext_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
-        other = False, embedding = 'Wikipedia_Fasttext.vec', stratified = True))
+    #create_experiment(Experiment(name = '3baseline_fasttext_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
+        #other = False, embedding = 'Wikipedia_Fasttext.vec', stratified = True))
 
-    create_experiment(Experiment(name = '4baseline_fasttext_scielo',oversampling = False, delete = False, pos = False, augmentation = False, \
-        other = False, embedding = 'Scielo_Fasttext.vec', stratified = True))
+    #create_experiment(Experiment(name = '4baseline_fasttext_scielo',oversampling = False, delete = False, pos = False, augmentation = False, \
+        #other = False, embedding = 'Scielo_Fasttext.vec', stratified = True))
 
-    create_experiment(Experiment(name = '5baseline_fasttext_scielo_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
-        other = False, embedding = 'Scielo_wiki_Fasttext.vec', stratified = True))
+    #create_experiment(Experiment(name = '5baseline_fasttext_scielo_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
+        #other = False, embedding = 'Scielo_wiki_Fasttext.vec', stratified = True))
 
-    create_experiment(Experiment(name = '6baseline_word2vec_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
-        other = False, embedding = 'W2V_wiki_w10_c5_300_15epoch.txt', stratified = True))
+    #create_experiment(Experiment(name = '6baseline_word2vec_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
+        #other = False, embedding = 'W2V_wiki_w10_c5_300_15epoch.txt', stratified = True))
 
-    create_experiment(Experiment(name = '7baseline_word2vec_scielo',oversampling = False, delete = False, pos = False, augmentation = False, \
-        other = False, embedding = 'W2V_scielo_w10_c5_300_15epoch.txt', stratified = True))
+    #create_experiment(Experiment(name = '7baseline_word2vec_scielo',oversampling = False, delete = False, pos = False, augmentation = False, \
+        #other = False, embedding = 'W2V_scielo_w10_c5_300_15epoch.txt', stratified = True))
 
-    create_experiment(Experiment(name = '8baseline_word2vec_scielo_wikipedia',oversampling = False, delete = False, pos = False, augmentation = False, \
-        other = False, embedding = 'W2V_scielo_wiki_w10_c5_300_15epoch.txt', stratified = True))
+    #create_experiment(Experiment(name = '8baseline_word2vec_scielo_wikipedia',oversampling = False, delete = False, pos = True, augmentation = False, \
+        #other = False, embedding = 'Scielo_wiki_FastText300.vec', stratified = True))
+
+
+
 
 def create_experiments2():
     EXPERIMENTS_PATH2 = os.path.join('..','..','experiments2')
     if not os.path.exists(EXPERIMENTS_PATH2):
         os.makedirs(EXPERIMENTS_PATH2)
     print('Creating experiments 2...')
-    Experiment = collections.namedtuple('Experiment',['name','pos','augmentation','gazetteer'])
+    Experiment = collections.namedtuple('Experiment',['name','pos','augmentation','gazetteer', 'affixes'])
     def create_experiment(experiment):
         parameters = {'pretrained_model_folder':'../trained_models/conll_2003_en',
-                      'dataset_text_folder':'../data/conll2003/en',
+                      'dataset_text_folder':'/gpfs/projects/bsc88/CustomNeuroNERFinalCandidate1/data/farmacos-final-one-stratified-split/farmacos-final-one-stratified-split',
                       'character_embedding_dimension':25,
                       'character_lstm_hidden_state_dimension':25,
                       'check_for_digits_replaced_with_zeros':True,
@@ -306,7 +311,7 @@ def create_experiments2():
                       'load_all_pretrained_token_embeddings':False,
                       'main_evaluation_mode':'conll',
                       'maximum_number_of_epochs':100,
-                      'number_of_cpu_threads':48,
+                      'number_of_cpu_threads':12,
                       'number_of_gpus':0,
                       'optimizer':'sgd',
                       'output_folder':'../output',
@@ -331,14 +336,20 @@ def create_experiments2():
                       'use_pretrained_model':False,
                       'verbose':False,
                       'use_pos': False,
+                      'use_aff': False,
+                      'freeze_aff': False,
                       'freeze_pos': False,
                       'use_gaz': False,
                       'freeze_gaz': False,
-                      'gaz_filepath':'/gpfs/scratch/bsc88/bsc88251/data/gazetteer/principio_activo_gazetteer.txt'}
-        parameters_filepath = '/gpfs/scratch/bsc88/bsc88251/experiments2/' + experiment.name + '/' + experiment.name + '_parameters.ini'
-        output_folder = '/gpfs/scratch/bsc88/bsc88251/experiments2/' + experiment.name + '/' + experiment.name + '_output'
-        dataset_text_folder = '/gpfs/scratch/bsc88/bsc88251/data/' + experiment.name + '/farmacos-final-one-stratified-split-without-unclear-no-norm'
-        token_pretrained_embedding_filepath = '/gpfs/scratch/bsc88/bsc88251/data/word_vectors/' + 'Scielo_Fasttext.vec'
+                      'aff_filepath': '/gpfs/projects/bsc88/CustomNeuroNERFinalCandidate1/data/Affixes_EN_ES.tsv',
+                      'gaz_filepath': '/gpfs/projects/bsc88/FarmacoNERResources/FarmacoNERDef/data/gazetteer/principio_activo_gazetteer.txt' }
+        parameters_filepath = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments/' + experiment.name + '/' + experiment.name + '_parameters.ini'
+        output_folder = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments/' + experiment.name + '/' + experiment.name + '_output'
+        dataset_text_folder = '/gpfs/projects/bsc88/CustomNeuroNERFinalCandidate1/data/farmacos-final-one-stratified-split/farmacos-final-one-stratified-split'
+        token_pretrained_embedding_filepath = '/gpfs/projects/bsc88/Resources/Embeddings_ES/Scielo_Wikipedia/' + 'Scielo_wiki_FastText300.vec'
+
+
+
 
         if experiment.pos:
             parameters['use_pos'] = True
@@ -350,6 +361,9 @@ def create_experiments2():
 
         if experiment.gazetteer:
             parameters['use_gaz'] = True
+
+        if experiment.affixes:
+            parameters['use_aff'] = True
 
         parameters['parameters_filepath'] = parameters_filepath
         parameters['output_folder'] = output_folder
@@ -395,6 +409,8 @@ character_lstm_hidden_state_dimension = {character_lstm_hidden_state_dimension}
 use_pos = {use_pos}
 
 use_gaz = {use_gaz}
+
+use_aff = {use_aff}
 
 # In order to use random initialization instead, set token_pretrained_embedding_filepath to empty string, as below:
 # token_pretrained_embedding_filepath =
@@ -475,6 +491,8 @@ freeze_gaz = {freeze_gaz}
 
 gaz_filepath = {gaz_filepath}
 
+aff_filepath = {aff_filepath}
+
 # If debug is set to True, only 200 lines will be loaded for each split of the dataset.
 debug = {debug}
 verbose = {verbose}
@@ -493,20 +511,20 @@ reload_crf = {reload_crf}
 parameters_filepath = {parameters_filepath}
 '''.format(**parameters)
         script = {'jobname': 'conll2003_debug',
-                'workdir': '/gpfs/home/bsc88/bsc88251/CustomNeuroNERFinalCandidate1/src',
+                'workdir': '/gpfs/projects/bsc88/CustomNeuroNERFinalCandidate1/src',
                 'output': '/gpfs/home/bsc88/bsc88251/ntest/conll2003_debug.out',
                 'error': '/gpfs/home/bsc88/bsc88251/ntest/conll2003_debug.err',
                 'ntasks': 1,
                 'cpuspertask': 12,
                 'time': '18:00:00',
-                'debug': '#SBATCH --qos=debug',
+                'debug': '#SBATCH --qos=bsc_ls',
                 'parameters_filepath': parameters_filepath}
         script['debug'] = ''
-        script['output'] = '/gpfs/scratch/bsc88/bsc88251/experiments2/' + experiment.name + '/' + experiment.name + '.out'
-        script['error'] = '/gpfs/scratch/bsc88/bsc88251/experiments2/' + experiment.name + '/' + experiment.name + '.err'
+        script['output'] = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments/' + experiment.name + '/' + experiment.name + '.out'
+        script['error'] = '/gpfs/scratch/bsc88/bsc88260/FarmacoNER/Experiments/' + experiment.name + '/' + experiment.name + '.err'
         script['jobname'] = experiment.name
         if experiment.pos:
-            script['cpuspertask'] = 48
+            script['cpuspertask'] = 12
 
         job_template = '''#!/bin/bash
 #SBATCH --job-name={jobname}
@@ -522,12 +540,12 @@ parameters_filepath = {parameters_filepath}
 module load gcc/7.2.0 impi/2018.1 mkl/2018.1
 module load python/3.6.4_ML
 
-source /gpfs/home/bsc88/bsc88251/CustomNeuroNERFinalCandidate1/bin/activate
+source /gpfs/projects/bsc88/CustomNeuroNERFinalCandidate1/bin/activate
 python3 main.py --parameters_filepath {parameters_filepath}
 '''.format(**script)
 
 
-        EXPERIMENTS_PATH2 = os.path.join('..','..','experiments2')
+        EXPERIMENTS_PATH2 = os.path.join('..','..','Experiments')
         experiment_path = os.path.join(EXPERIMENTS_PATH2,experiment.name)
         if os.path.exists(experiment_path):
             print('Experiment',experiment_path,'already exists!')
@@ -548,21 +566,29 @@ python3 main.py --parameters_filepath {parameters_filepath}
         
 
     # Normalizables, Proteinas
-    create_experiment(Experiment(name='9PN_PYAYGY', pos = True, augmentation = True, gazetteer = True))
 
-    create_experiment(Experiment(name='10PN_PYANGY', pos = True, augmentation = False, gazetteer = True))
 
-    create_experiment(Experiment(name='11PN_PYANGN', pos = True, augmentation = False, gazetteer = False))
+    create_experiment(Experiment(name='10_1PN_PYANGYAN', pos = True, augmentation = False, gazetteer = True, affixes=False))
 
-    create_experiment(Experiment(name='12PN_PNAYGY', pos = False, augmentation = True, gazetteer = True))
+    create_experiment(Experiment(name='11_1PN_PYANGNAN', pos = True, augmentation = False, gazetteer = False, affixes=False))
 
-    create_experiment(Experiment(name='13PN_PNANGY', pos = False, augmentation = False, gazetteer = True))
 
-    create_experiment(Experiment(name='14PN_PNANGN', pos = False, augmentation = False, gazetteer = False))
 
-    create_experiment(Experiment(name='15PN_PNAYGN', pos = False, augmentation = True, gazetteer = False))
+    create_experiment(Experiment(name='13_1PN_PNANGYAN', pos = False, augmentation = False, gazetteer = True, affixes=False))
 
-    create_experiment(Experiment(name='16PN_PYAYGN', pos = True, augmentation = True, gazetteer = False))
+    create_experiment(Experiment(name='14_1PN_PNANGNAN', pos = False, augmentation = False, gazetteer = False, affixes=False))
+
+
+    create_experiment(Experiment(name='10_2PN_PYANGYAY', pos = True, augmentation = False, gazetteer = True, affixes=True))
+
+    create_experiment(Experiment(name='11_2PN_PYANGNAY', pos = True, augmentation = False, gazetteer = False, affixes=True))
+
+
+
+    create_experiment(Experiment(name='13_2PN_PNANGYAY', pos = False, augmentation = False, gazetteer = True, affixes=True))
+
+    create_experiment(Experiment(name='14_2PN_PNANGNAY', pos = False, augmentation = False, gazetteer = False, affixes=True))
+
 
 
 def create_experiments3():

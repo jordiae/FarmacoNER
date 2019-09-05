@@ -28,14 +28,21 @@ class Dataset(object):
             gaz_set.add(l)
         self.gaz_set = gaz_set
 
-    def _parse_aff(self,aff_filepath):
-        # TODO
+    def _parse_aff(self, aff_filepath):
+
         with open(aff_filepath) as f:
             s = f.read()
         lines = s.splitlines()
-        aff_set = set([])
+        aff_set = dict(suffix=[], prefix=[], root=[])
         for l in lines:
-            aff_set.add(l)
+            tmp = l.split('\n')
+            if tmp[0].strip() == 'suffix':
+                aff_set['suffix'].append(tmp[2].strip())
+            elif tmp[0].strip() == 'prefix':
+                aff_set['prefix'].append(tmp[2].strip())
+            elif tmp[0].strip() == 'root':
+                aff_set['root'].append(tmp[2].strip())
+
         self.aff_set = aff_set
 
     def _parse_dataset(self, dataset_filepath, parameters):
@@ -107,12 +114,25 @@ class Dataset(object):
                     else:
                         gaz = 0
                 if parameters['use_aff']:
-                    # TODO
-                    aff = token.lower() in self.aff_set
-                    if aff:
-                        aff = 1
-                    else:
-                        aff = 0
+                    aff = 0
+                    # Check for prefix
+                    for pref in self.aff_set['prefix']:
+                        pattern = '^' + re.escape(pref.lower())
+                        result = re.match(pattern, token.lower())
+                        if result:
+                            aff = 1
+
+                    for suf in self.aff_set['suffix']:
+                        pattern = re.escape(suf.lower()) + '$'
+                        result = re.match(pattern, token.lower())
+                        if result:
+                            aff = 1
+
+                    for rot in self.aff_set['root']:
+                        result = token.lower().find(rot)
+                        if result > 1:
+                            aff = 1
+
 
                 token_count[token] += 1
                 label_count[label] += 1
